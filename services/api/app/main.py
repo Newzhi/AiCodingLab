@@ -7,16 +7,19 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.jobs.scheduler import start_scheduler, stop_scheduler
-from app.routers import assets, health, ingest, layers, times
+from app.interfaces.routers import assets, health, ingest, layers, query, times, weather
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    from app.process.demo import generate_demo_times
-    from app.services.catalog import list_valid_times
+    from app.application.demo_ingest import DemoIngestService
+    from app.application.layer_catalog import list_valid_times
 
+    service = DemoIngestService()
     if not list_valid_times():
-        generate_demo_times()
+        service.generate_demo_times()
+    else:
+        service.repair_existing_times()
     start_scheduler()
     yield
     stop_scheduler()
@@ -50,6 +53,8 @@ app.include_router(layers.router)
 app.include_router(times.router)
 app.include_router(assets.router)
 app.include_router(ingest.router)
+app.include_router(query.router)
+app.include_router(weather.router)
 
 
 @app.get("/")

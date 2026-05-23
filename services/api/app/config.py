@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     data_dir: Path = ROOT / "data"
     processed_dir: Path = ROOT / "data" / "processed"
     raw_dir: Path = ROOT / "data" / "raw"
+    point_weather_cache_dir: Path = ROOT / "data" / "cache" / "point_weather"
+    point_weather_cache_ttl_sec: int = 900
+
+    enable_web_weather: bool = True
 
     gfs_model: str = "gfs"
     gfs_product: str = "0p25"
@@ -35,3 +39,4 @@ class Settings(BaseSettings):
 settings = Settings()
 settings.processed_dir.mkdir(parents=True, exist_ok=True)
 settings.raw_dir.mkdir(parents=True, exist_ok=True)
+settings.point_weather_cache_dir.mkdir(parents=True, exist_ok=True)

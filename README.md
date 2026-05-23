@@ -109,6 +109,33 @@ npm run preview
 | `GET /times` | 可用 `valid_time` 列表（≥2） |
 | `GET /assets/{valid_time}/{layer_id}` | 图层资产 URL |
 | `GET /static/processed/...` | PNG / GeoJSON / UV 二进制 |
+| `GET /query/temperature?lat=&lon=&valid_time=` | 点气温（网格 → Open-Meteo，兼容旧路径） |
+| `GET /weather/point?lat=&lon=&valid_time=` | 点气温（grid → Open-Meteo → wttr.in） |
+
+## 第三方数据获取
+
+移动鼠标于球体上时，界面显示十字准星 HUD：`纬度, 经度, 气温 °C, source: grid|open-meteo|web-scrape`。
+
+| 优先级 | 来源 | 说明 |
+|--------|------|------|
+| 1 | `grid` | 本地 GFS/demo 网格双线性采样（与当前 `valid_time` 一致） |
+| 2 | `open-meteo` | [Open-Meteo Forecast API](https://open-meteo.com/)（无需 API Key） |
+| 3 | `web-scrape` | [wttr.in](https://wttr.in/) JSON 回退（站点改版或限流时可能失效） |
+
+**如何启用：**
+
+- 默认：优先网格；网格不可用时自动请求 Open-Meteo / wttr.in。
+- 勾选图层面板 **「实时网页数据」**：跳过网格，直接请求网页/API 点数据。
+- API：`GET http://localhost:8000/weather/point?lat=31.23&lon=121.47&prefer_web=true`
+
+**缓存与限速：** 结果缓存于 `data/cache/point_weather/`（默认 TTL 15 分钟）；客户端 300ms 防抖。
+
+**法律与风险声明：**
+
+- 第三方网页/API 受其服务条款约束；本项目不保证长期可用性。
+- wttr.in 等网页抓取对 JSON 结构敏感，**上游改版可能导致回退失效**。
+- 生产环境请优先使用 GFS/CMEMS 官方管线；网页点查询仅作 HUD enrichment。
+- 使用本功能即表示您已了解上述风险；商业用途请自行确认数据源许可。
 
 ## 目录
 
@@ -132,6 +159,9 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 | 时间轴 ≥2 时次 | ✅ |
 | Attribution + valid_time | ✅ |
 | GPU ComputeCommand 粒子（风/洋流） | ✅ |
+| 鼠标十字准星 + 网格气温采样 | ✅ |
+| Open-Meteo 点查询回退（非爬虫） | ✅ |
+| 分层架构（domain/application/infrastructure） | ✅ |
 | 多智能体文档（AGENTS.md 等） | ✅ |
 
 ## 向总指挥提交需求

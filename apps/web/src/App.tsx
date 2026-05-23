@@ -8,6 +8,7 @@ import { FlyToPanel } from './components/FlyToPanel'
 import { Timeline } from './components/Timeline'
 import { Legend } from './components/Legend'
 import { Attribution } from './components/Attribution'
+import { CrosshairOverlay } from './components/CrosshairOverlay'
 import { useLayerStore } from './stores/layerStore'
 import './App.css'
 
@@ -45,6 +46,7 @@ function AppInner() {
           </div>
         )}
         <EarthGlobe />
+        <CrosshairOverlay />
         <Timeline
           times={times}
           value={currentTime}

@@ -1,22 +1,17 @@
-import { useLayerStore, type LayerId } from '../stores/layerStore'
-
-const LABELS: Record<LayerId, string> = {
-  basemap: '底图',
-  temperature: '气温 (2m)',
-  terrain_contours: '地势等高线',
-  wind: '风场粒子',
-  ocean: '洋流粒子',
-}
+import { useLayerStore } from '../stores/layerStore'
+import { LAYER_REGISTRY } from '../config/layerRegistry'
+import { useLayerErrorStore } from '../stores/layerErrorStore'
 
 export function LayerPanel() {
   const layers = useLayerStore((s) => s.layers)
   const setLayer = useLayerStore((s) => s.setLayer)
+  const errors = useLayerErrorStore((s) => s.errors)
 
   return (
     <aside className="panel layer-panel">
       <h2>图层</h2>
       <ul>
-        {(Object.keys(LABELS) as LayerId[]).map((id) => (
+        {LAYER_REGISTRY.map(({ id, label }) => (
           <li key={id}>
             <label>
               <input
@@ -24,8 +19,13 @@ export function LayerPanel() {
                 checked={layers[id]}
                 onChange={(e) => setLayer(id, e.target.checked)}
               />
-              {LABELS[id]}
+              {label}
             </label>
+            {errors[id] && (
+              <span className="layer-error-hint" title={errors[id].message}>
+                ⚠
+              </span>
+            )}
           </li>
         ))}
       </ul>

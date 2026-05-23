@@ -1,95 +1,39 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ImageryLayer, Viewer } from 'cesium'
-import { Color } from 'cesium'
-import { createViewer, setBasemapVisible } from '../cesium/createViewer'
-import { useLayerStore } from '../stores/layerStore'
+import { createViewer } from '../cesium/createViewer'
+import { useCrosshairProbe } from '../controllers/useCrosshairProbe'
+import { destroyGlobeLayers, useGlobeLayers } from '../controllers/useGlobeLayers'
 import { useViewerStore } from '../stores/viewerStore'
-import {
-  applyTemperatureLayer,
-  removeTemperatureLayer,
-} from '../layers/temperatureLayer'
-import {
-  applyTerrainContoursLayer,
-  removeTerrainContoursLayer,
-} from '../layers/terrainContoursLayer'
-import { GpuUvParticleLayer } from '../layers/uvParticleLayer'
-
-const windLayer = new GpuUvParticleLayer(Color.CYAN.withAlpha(0.85))
-const oceanLayer = new GpuUvParticleLayer(Color.DEEPSKYBLUE.withAlpha(0.9))
+import { LayerErrorBanner } from './LayerErrorBanner'
 
 export function EarthGlobe() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const viewerRef = useRef<Viewer | null>(null)
-  const basemapLayerRef = useRef<ImageryLayer | null>(null)
+  const [viewer, setViewerState] = useState<Viewer | null>(null)
+  const [basemapLayer, setBasemapLayer] = useState<ImageryLayer | null>(null)
   const setViewer = useViewerStore((s) => s.setViewer)
-  const layers = useLayerStore((s) => s.layers)
-  const currentTime = useLayerStore((s) => s.currentTime)
-  const setTempRange = useLayerStore((s) => s.setTempRange)
+
+  useGlobeLayers(viewer, basemapLayer)
+  useCrosshairProbe(viewer)
 
   useEffect(() => {
-    if (!containerRef.current || viewerRef.current) return
-    const { viewer, basemapLayer } = createViewer(containerRef.current)
-    viewerRef.current = viewer
-    basemapLayerRef.current = basemapLayer
-    setViewer(viewer)
+    if (!containerRef.current) return
+    const created = createViewer(containerRef.current)
+    setViewerState(created.viewer)
+    setBasemapLayer(created.basemapLayer)
+    setViewer(created.viewer)
     return () => {
-      windLayer.destroy(viewerRef.current!)
-      oceanLayer.destroy(viewerRef.current!)
-      viewerRef.current?.destroy()
-      viewerRef.current = null
-      basemapLayerRef.current = null
+      destroyGlobeLayers(created.viewer)
+      created.viewer.destroy()
+      setViewerState(null)
+      setBasemapLayer(null)
       setViewer(null)
     }
   }, [setViewer])
 
-  useEffect(() => {
-    setBasemapVisible(basemapLayerRef.current, layers.basemap)
-  }, [layers.basemap])
-
-  useEffect(() => {
-    const viewer = viewerRef.current
-    const time = currentTime
-    if (!viewer || !time) return
-
-    let cancelled = false
-
-    async function sync() {
-      try {
-        if (layers.temperature) {
-          const range = await applyTemperatureLayer(viewer, time)
-          if (!cancelled) setTempRange(range)
-        } else {
-          removeTemperatureLayer(viewer)
-          if (!cancelled) setTempRange(null)
-        }
-
-        if (layers.terrain_contours) {
-          await applyTerrainContoursLayer(viewer, time)
-        } else {
-          await removeTerrainContoursLayer(viewer)
-        }
-
-        if (layers.wind) {
-          await windLayer.load(viewer, time, 'wind')
-        } else {
-          windLayer.destroy(viewer)
-        }
-
-        if (layers.ocean) {
-          await oceanLayer.load(viewer, time, 'ocean')
-        } else {
-          oceanLayer.destroy(viewer)
-        }
-      } catch (err) {
-        console.error('Layer sync failed', err)
-      }
-    }
-
-    void sync()
-    return () => {
-      cancelled = true
-    }
-  }, [layers, currentTime, setTempRange])
-
-  return <div ref={containerRef} className="cesium-container" />
+  return (
+    <>
+      <div ref={containerRef} className="cesium-container" />
+      <LayerErrorBanner />
+    </>
+  )
 }

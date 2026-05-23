@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { DEFAULT_LAYER_VISIBILITY } from '../config/layerRegistry'
 
 export type LayerId =
   | 'basemap'
@@ -17,13 +18,7 @@ type LayerState = {
 }
 
 export const useLayerStore = create<LayerState>((set) => ({
-  layers: {
-    basemap: true,
-    temperature: true,
-    terrain_contours: false,
-    wind: false,
-    ocean: false,
-  },
+  layers: { ...DEFAULT_LAYER_VISIBILITY },
   currentTime: null,
   tempRange: null,
   setLayer: (id, visible) =>
