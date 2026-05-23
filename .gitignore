@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+.venv-min/
+venv/
+services/api/.venv/
+services/api/.venv-min/
+
+# Environment
+.env
+.env.local
+
+# Data
+data/raw/
+data/processed/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cesium
+apps/web/public/cesium/
+
+# Logs
+*.log

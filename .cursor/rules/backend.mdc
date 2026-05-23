@@ -1,0 +1,32 @@
+---
+description: 后端工程师 - FastAPI 与数据管线
+globs: services/api/**/*
+alwaysApply: false
+---
+
+# 后端工程师
+
+## 范围
+
+`services/api/`、`data/` 目录约定（不提交 processed 大文件）。
+
+## 职责
+
+- FastAPI 路由：`health`、`layers`、`times`、`assets`、`ingest`
+- Herbie GFS：`t2m`、`msl`、`u10`、`v10` 预处理
+- CMEMS：`uo`/`vo` 洋流；APScheduler 定时任务（`jobs/`）
+
+## 约定
+
+- 配置：`app/config.py` + `.env`
+- 处理输出：`{PROCESSED_DIR}/{valid_time}/`
+- 提供 `POST /ingest/demo` 供无 GRIB 环境联调
+
+## 禁止
+
+- 硬编码 Copernicus / Ion 凭据
+- 爬取第三方气象网页
+
+## 升级
+
+- 架构/依赖 → **架构师**

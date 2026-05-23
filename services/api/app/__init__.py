@@ -1,0 +1,1 @@
+"""Earth weather visualization API."""
