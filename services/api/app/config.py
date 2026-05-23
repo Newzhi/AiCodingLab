@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     cmems_username: str = ""
     cmems_password: str = ""
     cmems_dataset_id: str = "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i"
+    enable_scheduler: bool = False
 
     @property
     def forecast_hours(self) -> list[int]:

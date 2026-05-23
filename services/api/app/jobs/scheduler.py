@@ -12,6 +12,11 @@ _scheduler: BackgroundScheduler | None = None
 
 def start_scheduler() -> None:
     global _scheduler
+    from app.config import settings
+
+    if not settings.enable_scheduler:
+        logger.info("APScheduler disabled (set ENABLE_SCHEDULER=true to enable GFS cron)")
+        return
     if _scheduler is not None:
         return
     _scheduler = BackgroundScheduler()
