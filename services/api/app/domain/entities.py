@@ -92,5 +92,70 @@ class PointWeatherResult:
         }
 
 
+@dataclass(frozen=True)
+class PointWeatherSourceReading:
+    id: str
+    temp_c: float | None
+    status: str
+    latency_ms: int | None = None
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "id": self.id,
+            "temp_c": self.temp_c,
+            "status": self.status,
+        }
+        if self.latency_ms is not None:
+            out["latency_ms"] = self.latency_ms
+        if self.error is not None:
+            out["error"] = self.error
+        return out
+
+
+@dataclass(frozen=True)
+class PointWeatherMultiResult:
+    lat: float
+    lon: float
+    consensus_temp_c: float | None
+    confidence: str
+    sources: list[PointWeatherSourceReading]
+    primary_used: str
+    fetched_at: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "lat": self.lat,
+            "lon": self.lon,
+            "consensus_temp_c": self.consensus_temp_c,
+            "confidence": self.confidence,
+            "sources": [s.to_dict() for s in self.sources],
+            "primary_used": self.primary_used,
+            "fetched_at": self.fetched_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> PointWeatherMultiResult:
+        sources = [
+            PointWeatherSourceReading(
+                id=str(s["id"]),
+                temp_c=s.get("temp_c"),
+                status=str(s.get("status", "error")),
+                latency_ms=s.get("latency_ms"),
+                error=s.get("error"),
+            )
+            for s in data.get("sources", [])
+        ]
+        return cls(
+            lat=float(data["lat"]),
+            lon=float(data["lon"]),
+            consensus_temp_c=data.get("consensus_temp_c"),
+            confidence=str(data.get("confidence", "low")),
+            sources=sources,
+            primary_used=str(data.get("primary_used", "none")),
+            fetched_at=str(data.get("fetched_at", "")),
+        )
+
+
 # Backward-compatible alias
 PointTemperature = PointWeatherResult

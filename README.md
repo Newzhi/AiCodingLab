@@ -110,25 +110,55 @@ npm run preview
 | `GET /assets/{valid_time}/{layer_id}` | 图层资产 URL |
 | `GET /static/processed/...` | PNG / GeoJSON / UV 二进制 |
 | `GET /query/temperature?lat=&lon=&valid_time=` | 点气温（网格 → Open-Meteo，兼容旧路径） |
-| `GET /weather/point?lat=&lon=&valid_time=` | 点气温（grid → Open-Meteo → wttr.in） |
+| `GET /weather/point?lat=&lon=&valid_time=` | 点气温（grid → Open-Meteo；`prefer_web=true` 走网页链） |
+| `GET /weather/point/multi?lat=&lon=&valid_time=` | **多源并行** + 共识气温与置信度 |
+
+## 数据准确性策略（多源校验）
+
+十字准星 HUD 强调**可核对、可回退**的点查询，而非单一数据源：
+
+| 机制 | 说明 |
+|------|------|
+| **并行采集** | `grid`（与图层一致的 GFS/demo 双线性）、`open-meteo`、`web-scrape`（wttr.in）；配置 `OPENWEATHER_API_KEY` 时增加 `openweather` |
+| **共识气温** | 对所有 `status=ok` 读数取**中位数** `consensus_temp_c` |
+| **置信度** | 有效读数离散度 ≤1.5°C → `high`；≤3°C → `medium`；>3°C → `low` |
+| **主源** | `primary_used` 优先 `grid`，其次 `open-meteo`、`openweather`、`web-scrape` |
+| **缓存** | `data/cache/point_weather/multi/`，经纬度四舍五入至 2 位小数，TTL 默认 900s（`POINT_MULTI_CACHE_TTL_SEC`） |
+| **限速** | 各 Provider 内置最小请求间隔（Open-Meteo 1s、wttr.in 3s 等） |
+| **前端** | 图层面板 **「多源校验模式」**（默认开）：HUD 显示共识气温、置信度颜色、各源 ✓/✗ 列表 |
+
+**可选 API Key（`.env`）：**
+
+| 变量 | 用途 |
+|------|------|
+| `OPENWEATHER_API_KEY` | [OpenWeatherMap Current Weather](https://openweathermap.org/current) — 未设置时该源为 `skipped` |
+
+示例：
+
+```bash
+curl "http://localhost:8000/weather/point/multi?lat=31.23&lon=121.47&valid_time=2026-05-23T00:00:00Z"
+```
 
 ## 第三方数据获取
 
-移动鼠标于球体上时，界面显示十字准星 HUD：`纬度, 经度, 气温 °C, source: grid|open-meteo|web-scrape`。
+移动鼠标于球体上时，界面显示全屏十字准星 HUD：`纬度/经度（4 位小数）`、共识或单源气温、多源列表（多源模式）。
 
 | 优先级 | 来源 | 说明 |
 |--------|------|------|
 | 1 | `grid` | 本地 GFS/demo 网格双线性采样（与当前 `valid_time` 一致） |
 | 2 | `open-meteo` | [Open-Meteo Forecast API](https://open-meteo.com/)（无需 API Key） |
 | 3 | `web-scrape` | [wttr.in](https://wttr.in/) JSON 回退（站点改版或限流时可能失效） |
+| 4 | `openweather` | OpenWeatherMap（需 `OPENWEATHER_API_KEY`） |
 
 **如何启用：**
 
-- 默认：优先网格；网格不可用时自动请求 Open-Meteo / wttr.in。
-- 勾选图层面板 **「实时网页数据」**：跳过网格，直接请求网页/API 点数据。
-- API：`GET http://localhost:8000/weather/point?lat=31.23&lon=121.47&prefer_web=true`
+- **多源校验模式**（默认开）：调用 `/weather/point/multi`，HUD 显示共识与各源状态。
+- 关闭多源时：优先网格；网格不可用时请求 Open-Meteo / wttr.in。
+- 勾选 **「实时网页数据」**：单源模式下跳过网格，走 `prefer_web` 网页链（与多源互斥时多源优先）。
+- API 单源：`GET .../weather/point?lat=31.23&lon=121.47&prefer_web=true`
+- API 多源：`GET .../weather/point/multi?lat=31.23&lon=121.47`
 
-**缓存与限速：** 结果缓存于 `data/cache/point_weather/`（默认 TTL 15 分钟）；客户端 300ms 防抖。
+**缓存与限速：** 单源缓存 `data/cache/point_weather/`；多源 `.../multi/`（默认 TTL 15 分钟）；十字准星位置每帧更新，气温请求 300ms 防抖。
 
 **法律与风险声明：**
 
@@ -160,6 +190,7 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 | Attribution + valid_time | ✅ |
 | GPU ComputeCommand 粒子（风/洋流） | ✅ |
 | 鼠标十字准星 + 网格气温采样 | ✅ |
+| 多源点查询共识 `/weather/point/multi` | ✅ |
 | Open-Meteo 点查询回退（非爬虫） | ✅ |
 | 分层架构（domain/application/infrastructure） | ✅ |
 | 多智能体文档（AGENTS.md 等） | ✅ |

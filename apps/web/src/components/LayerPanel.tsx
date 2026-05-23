@@ -9,6 +9,8 @@ export function LayerPanel() {
   const errors = useLayerErrorStore((s) => s.errors)
   const liveWebWeather = useCrosshairStore((s) => s.liveWebWeather)
   const setLiveWebWeather = useCrosshairStore((s) => s.setLiveWebWeather)
+  const multiSourceMode = useCrosshairStore((s) => s.multiSourceMode)
+  const setMultiSourceMode = useCrosshairStore((s) => s.setMultiSourceMode)
 
   return (
     <aside className="panel layer-panel">
@@ -38,8 +40,19 @@ export function LayerPanel() {
               type="checkbox"
               checked={liveWebWeather}
               onChange={(e) => setLiveWebWeather(e.target.checked)}
+              disabled={multiSourceMode}
             />
             实时网页数据
+          </label>
+        </li>
+        <li>
+          <label title="并行请求网格 + Open-Meteo + wttr.in (+ OpenWeatherMap)，显示共识气温与各源状态">
+            <input
+              type="checkbox"
+              checked={multiSourceMode}
+              onChange={(e) => setMultiSourceMode(e.target.checked)}
+            />
+            多源校验模式
           </label>
         </li>
       </ul>

@@ -8,9 +8,14 @@ from app.infrastructure.processors.temperature import (
     read_temperature_grid,
     sample_temperature_bilinear,
 )
+from app.config import settings
 from app.infrastructure.providers.open_meteo_provider import (
     OpenMeteoProvider,
     default_open_meteo_provider,
+)
+from app.infrastructure.providers.web_point_chain import (
+    WebPointProviderChain,
+    default_web_point_chain,
 )
 
 
@@ -24,9 +29,11 @@ class PointQueryService:
     def __init__(
         self,
         open_meteo: OpenMeteoProvider | None = None,
+        web_chain: WebPointProviderChain | None = None,
     ) -> None:
         self._repo = default_grid_repository
         self._open_meteo = open_meteo or default_open_meteo_provider
+        self._web_chain = web_chain or default_web_point_chain
 
     def query_temperature(
         self,
@@ -75,9 +82,14 @@ class PointQueryService:
         *,
         prefer_web: bool = False,
         allow_web: bool = True,
-        allow_scrape: bool = False,
+        allow_scrape: bool = True,
     ) -> PointWeatherResult:
-        """Compatibility wrapper — scraping disabled per AGENTS.md."""
-        if prefer_web:
-            return self.query_temperature(lat, lon, None, allow_open_meteo=allow_web)
+        lat = max(-90.0, min(90.0, lat))
+        lon = ((lon + 180) % 360) - 180
+
+        if prefer_web and settings.enable_web_weather and allow_web:
+            web = self._web_chain.query(lat, lon, allow_scrape=allow_scrape)
+            if web is not None:
+                return web
+
         return self.query_temperature(lat, lon, valid_time, allow_open_meteo=allow_web)

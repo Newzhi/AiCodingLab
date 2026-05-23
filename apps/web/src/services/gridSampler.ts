@@ -1,4 +1,5 @@
 import { assetUrl, fetchAssets, fetchManifest } from '../api/client'
+import type { Confidence, SourceStatus, WeatherSourceRow } from '../stores/crosshairStore'
 
 export type TemperatureGrid = {
   validTime: string
@@ -13,6 +14,16 @@ export type PointWeatherResponse = {
   temp_c: number | null
   source: string
   fetched_at: string | null
+}
+
+export type PointWeatherMultiResponse = {
+  lat: number
+  lon: number
+  consensus_temp_c: number | null
+  confidence: Confidence
+  sources: WeatherSourceRow[]
+  primary_used: string
+  fetched_at: string
 }
 
 type GridCache = {
@@ -127,7 +138,10 @@ export async function fetchPointWeather(
     lon: String(lon),
   })
   if (validTime) params.set('valid_time', validTime)
-  if (options.preferWeb) params.set('prefer_web', 'true')
+  if (options.preferWeb) {
+    params.set('prefer_web', 'true')
+    params.set('allow_scrape', 'true')
+  }
 
   try {
     const res = await fetch(`${API_BASE}/weather/point?${params}`)
@@ -143,13 +157,72 @@ export async function fetchPointWeather(
   }
 }
 
+export async function fetchPointWeatherMulti(
+  lat: number,
+  lon: number,
+  validTime: string | null,
+): Promise<PointWeatherMultiResponse | null> {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+  })
+  if (validTime) params.set('valid_time', validTime)
+  params.set('allow_scrape', 'true')
+
+  try {
+    const res = await fetch(`${API_BASE}/weather/point/multi?${params}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const sources: WeatherSourceRow[] = (data.sources ?? []).map(
+      (s: { id: string; temp_c: number | null; status: string; error?: string }) => ({
+        id: s.id,
+        temp_c: s.temp_c ?? null,
+        status: (s.status ?? 'error') as SourceStatus,
+        error: s.error,
+      }),
+    )
+    return {
+      lat: data.lat,
+      lon: data.lon,
+      consensus_temp_c: data.consensus_temp_c ?? null,
+      confidence: data.confidence ?? 'low',
+      sources,
+      primary_used: data.primary_used ?? 'none',
+      fetched_at: data.fetched_at ?? '',
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function probeTemperature(
   lat: number,
   lon: number,
   validTime: string | null,
   grid: TemperatureGrid | null,
-  options: { preferWeb?: boolean } = {},
-): Promise<{ tempC: number | null; source: string }> {
+  options: { preferWeb?: boolean; multiSource?: boolean } = {},
+): Promise<{
+  tempC: number | null
+  source: string
+  consensusTempC?: number | null
+  confidence?: Confidence
+  sources?: WeatherSourceRow[]
+  primaryUsed?: string
+}> {
+  if (options.multiSource) {
+    const multi = await fetchPointWeatherMulti(lat, lon, validTime)
+    if (multi) {
+      return {
+        tempC: multi.consensus_temp_c,
+        source: multi.primary_used,
+        consensusTempC: multi.consensus_temp_c,
+        confidence: multi.confidence,
+        sources: multi.sources,
+        primaryUsed: multi.primary_used,
+      }
+    }
+  }
+
   if (!options.preferWeb) {
     const fromGrid = sampleGridTemperature(grid, lat, lon)
     if (fromGrid !== null && grid) {

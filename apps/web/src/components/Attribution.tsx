@@ -34,6 +34,7 @@ export function Attribution({ validTime }: Props) {
     <footer className="attribution">
       <p>
         气象图层：NOAA GFS（气温/风）、Copernicus Marine（洋流）；地势等高线来自合成全球 DEM（演示）。
+        十字准星多源校验：本地网格 + Open-Meteo + wttr.in（可选 OpenWeatherMap，见 README）。
         仅供科研演示，商用请核对许可。
       </p>
       <p>{basemapNote} · 视图锁定为 3D 球体（无平面地图模式）</p>

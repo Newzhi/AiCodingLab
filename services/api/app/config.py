@@ -19,8 +19,11 @@ class Settings(BaseSettings):
     raw_dir: Path = ROOT / "data" / "raw"
     point_weather_cache_dir: Path = ROOT / "data" / "cache" / "point_weather"
     point_weather_cache_ttl_sec: int = 900
+    point_multi_cache_ttl_sec: int = 900
+    point_provider_timeout_sec: float = 12.0
 
     enable_web_weather: bool = True
+    openweather_api_key: str = ""
 
     gfs_model: str = "gfs"
     gfs_product: str = "0p25"

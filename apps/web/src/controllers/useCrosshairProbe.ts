@@ -7,11 +7,6 @@ import {
   ScreenSpaceEventType,
   type Viewer,
 } from 'cesium'
-import {
-  attachGlobeCrosshair,
-  detachGlobeCrosshair,
-  updateGlobeCrosshair,
-} from '../cesium/crosshairLines'
 import { loadTemperatureGrid, probeTemperature } from '../services/gridSampler'
 import { useCrosshairStore } from '../stores/crosshairStore'
 import { useLayerStore } from '../stores/layerStore'
@@ -23,6 +18,7 @@ export function useCrosshairProbe(viewer: Viewer | null) {
   const setProbe = useCrosshairStore((s) => s.setProbe)
   const reset = useCrosshairStore((s) => s.reset)
   const liveWebWeather = useCrosshairStore((s) => s.liveWebWeather)
+  const multiSourceMode = useCrosshairStore((s) => s.multiSourceMode)
   const gridRef = useRef<Awaited<ReturnType<typeof loadTemperatureGrid>>>(null)
   const probeTimer = useRef<number | null>(null)
   const probeGen = useRef(0)
@@ -44,21 +40,30 @@ export function useCrosshairProbe(viewer: Viewer | null) {
   useEffect(() => {
     if (!viewer || viewer.isDestroyed()) return
 
-    attachGlobeCrosshair(viewer)
     const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
     const canvas = viewer.scene.canvas
 
     const pickLatLon = (position: Cartesian2) => {
+      const scene = viewer.scene
+      let cartesian = viewer.camera.pickEllipsoid(position, Ellipsoid.WGS84)
+      if (!cartesian) return null
+
       const ray = viewer.camera.getPickRay(position)
-      if (!ray) return null
-      const cartesian = viewer.scene.globe.pick(ray, viewer.scene)
-      const hit =
-        cartesian ?? viewer.camera.pickEllipsoid(position, Ellipsoid.WGS84)
-      if (!hit) return null
-      const carto = Cartographic.fromCartesian(hit)
+      if (ray && scene.globe.show) {
+        const globeHit = scene.globe.pick(ray, scene)
+        if (globeHit) cartesian = globeHit
+      }
+
+      if (scene.pickPositionSupported) {
+        const terrainHit = scene.pickPosition(position)
+        if (terrainHit) cartesian = terrainHit
+      }
+
+      const carto = Cartographic.fromCartesian(cartesian)
       return {
         lat: (carto.latitude * 180) / Math.PI,
         lon: (carto.longitude * 180) / Math.PI,
+        heightM: carto.height,
       }
     }
 
@@ -70,7 +75,6 @@ export function useCrosshairProbe(viewer: Viewer | null) {
         return
       }
 
-      updateGlobeCrosshair(viewer, ll.lat, ll.lon)
       setProbe({
         active: true,
         screenX: rect.left + movement.endPosition.x,
@@ -84,11 +88,29 @@ export function useCrosshairProbe(viewer: Viewer | null) {
       probeTimer.current = window.setTimeout(() => {
         void probeTemperature(ll.lat, ll.lon, currentTime, gridRef.current, {
           preferWeb: liveWebWeather,
-        }).then(
-          ({ tempC, source }) => {
-            if (gen === probeGen.current) setProbe({ tempC, source })
-          },
-        )
+          multiSource: multiSourceMode,
+        }).then((result) => {
+          if (gen !== probeGen.current) return
+          if (multiSourceMode && result.sources) {
+            setProbe({
+              tempC: result.consensusTempC ?? result.tempC,
+              consensusTempC: result.consensusTempC ?? result.tempC,
+              confidence: result.confidence ?? 'low',
+              sources: result.sources,
+              primaryUsed: result.primaryUsed ?? result.source,
+              source: result.primaryUsed ?? result.source,
+            })
+          } else {
+            setProbe({
+              tempC: result.tempC,
+              source: result.source,
+              consensusTempC: result.tempC,
+              confidence: 'medium',
+              sources: [],
+              primaryUsed: result.source,
+            })
+          }
+        })
       }, PROBE_DEBOUNCE_MS)
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
@@ -99,8 +121,14 @@ export function useCrosshairProbe(viewer: Viewer | null) {
       if (probeTimer.current !== null) window.clearTimeout(probeTimer.current)
       canvas.removeEventListener('mouseleave', onLeave)
       handler.destroy()
-      detachGlobeCrosshair(viewer)
       reset()
     }
-  }, [viewer, currentTime, liveWebWeather, setProbe, reset])
+  }, [
+    viewer,
+    currentTime,
+    liveWebWeather,
+    multiSourceMode,
+    setProbe,
+    reset,
+  ])
 }
