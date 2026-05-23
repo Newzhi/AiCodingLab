@@ -16,12 +16,13 @@ import { loadTemperatureGrid, probeTemperature } from '../services/gridSampler'
 import { useCrosshairStore } from '../stores/crosshairStore'
 import { useLayerStore } from '../stores/layerStore'
 
-const PROBE_DEBOUNCE_MS = 80
+const PROBE_DEBOUNCE_MS = 300
 
 export function useCrosshairProbe(viewer: Viewer | null) {
   const currentTime = useLayerStore((s) => s.currentTime)
   const setProbe = useCrosshairStore((s) => s.setProbe)
   const reset = useCrosshairStore((s) => s.reset)
+  const liveWebWeather = useCrosshairStore((s) => s.liveWebWeather)
   const gridRef = useRef<Awaited<ReturnType<typeof loadTemperatureGrid>>>(null)
   const probeTimer = useRef<number | null>(null)
   const probeGen = useRef(0)
@@ -81,7 +82,9 @@ export function useCrosshairProbe(viewer: Viewer | null) {
       if (probeTimer.current !== null) window.clearTimeout(probeTimer.current)
       const gen = ++probeGen.current
       probeTimer.current = window.setTimeout(() => {
-        void probeTemperature(ll.lat, ll.lon, currentTime, gridRef.current).then(
+        void probeTemperature(ll.lat, ll.lon, currentTime, gridRef.current, {
+          preferWeb: liveWebWeather,
+        }).then(
           ({ tempC, source }) => {
             if (gen === probeGen.current) setProbe({ tempC, source })
           },
@@ -99,5 +102,5 @@ export function useCrosshairProbe(viewer: Viewer | null) {
       detachGlobeCrosshair(viewer)
       reset()
     }
-  }, [viewer, currentTime, setProbe, reset])
+  }, [viewer, currentTime, liveWebWeather, setProbe, reset])
 }

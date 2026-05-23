@@ -62,7 +62,11 @@
 
 ## 禁止事项
 
-1. **禁止** 爬取或抓取第三方气象网站 HTML（使用 GFS GRIB + Copernicus NetCDF 官方管线）
+1. **默认禁止** 爬取或抓取第三方气象网站 HTML；**例外**须用户/产品明确批准，且须：
+   - 遵守目标站点 `robots.txt`（如适用）
+   - 限速、缓存响应（如 `data/cache/point_weather/` TTL 10–30 分钟）
+   - 在 README 中注明法律/服务条款免责声明
+   - 本项目已于用户批准下启用 Open-Meteo API + wttr.in 点查询回退
 2. **禁止** `git push --force` 到 `main` / `master`
 3. **禁止** 提交 `.env`、API Key、Copernicus 密码、Cesium Ion Token
 4. **禁止** 编辑计划文件：`c:\Users\Lenovo\.cursor\plans\3d地球气象可视化_b0b5752c.plan.md`（只读参考）

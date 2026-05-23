@@ -15,17 +15,19 @@ alwaysApply: false
 - FastAPI 路由：`health`、`layers`、`times`、`assets`、`ingest`
 - Herbie GFS：`t2m`、`msl`、`u10`、`v10` 预处理
 - CMEMS：`uo`/`vo` 洋流；APScheduler 定时任务（`jobs/`）
+- 点查询：`GET /weather/point` — GFS 网格采样 → Open-Meteo → wttr.in（用户批准例外）
 
 ## 约定
 
 - 配置：`app/config.py` + `.env`
 - 处理输出：`{PROCESSED_DIR}/{valid_time}/`
+- 点天气缓存：`{DATA_DIR}/cache/point_weather/`（TTL 默认 900s）
 - 提供 `POST /ingest/demo` 供无 GRIB 环境联调
 
 ## 禁止
 
 - 硬编码 Copernicus / Ion 凭据
-- 爬取第三方气象网页
+- 未经用户/PM 批准的第三方网页抓取（见 AGENTS.md 例外条款）
 
 ## 升级
 
