@@ -1,0 +1,6 @@
+{
+  "name": "terraglobe",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TerraGlobe — 3D Earth map visualization (OSM, terrain, roads)"
+}

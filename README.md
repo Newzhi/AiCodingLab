@@ -1,6 +1,11 @@
-# 3D 地球地图可视化
+# TerraGlobe
 
-Monorepo：Cesium 3D 地球（OSM 底图、地形、路网）+ FastAPI 图层目录与可选遗留气象摄取管线。
+**三维地球地图可视化** · Monorepo：Cesium 3D 地球（OSM 底图、地形、路网）+ FastAPI 图层目录与可选遗留气象摄取管线。
+
+## 项目名称
+
+- **英文名**：TerraGlobe（仓库文件夹 TerraGlobe）
+- **命名理由**：*Terra*（地球）+ *Globe*（球面/三维地球）贴合 Cesium 球体与 OSM/地形/路网图层 MVP；*GlobeAtlas* 更易联想为平面地图集，故未采用。
 
 ## 仓库
 
