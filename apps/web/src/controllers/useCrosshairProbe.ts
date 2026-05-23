@@ -7,7 +7,7 @@ import {
   ScreenSpaceEventType,
   type Viewer,
 } from 'cesium'
-import { loadTemperatureGrid, probeTemperature } from '../services/gridSampler'
+import { invalidateGridCache, loadTemperatureGrid, probeTemperature } from '../services/gridSampler'
 import { useCrosshairStore } from '../stores/crosshairStore'
 import { useLayerStore } from '../stores/layerStore'
 
@@ -19,6 +19,7 @@ export function useCrosshairProbe(viewer: Viewer | null) {
   const reset = useCrosshairStore((s) => s.reset)
   const liveWebWeather = useCrosshairStore((s) => s.liveWebWeather)
   const multiSourceMode = useCrosshairStore((s) => s.multiSourceMode)
+  const regionalView = useLayerStore((s) => s.layers.regional_view)
   const gridRef = useRef<Awaited<ReturnType<typeof loadTemperatureGrid>>>(null)
   const probeTimer = useRef<number | null>(null)
   const probeGen = useRef(0)
@@ -26,8 +27,10 @@ export function useCrosshairProbe(viewer: Viewer | null) {
   useEffect(() => {
     if (!currentTime) {
       gridRef.current = null
+      invalidateGridCache()
       return
     }
+    invalidateGridCache()
     let cancelled = false
     void loadTemperatureGrid(currentTime).then((grid) => {
       if (!cancelled) gridRef.current = grid
@@ -83,6 +86,8 @@ export function useCrosshairProbe(viewer: Viewer | null) {
         lon: ll.lon,
       })
 
+      if (regionalView) return
+
       if (probeTimer.current !== null) window.clearTimeout(probeTimer.current)
       const gen = ++probeGen.current
       probeTimer.current = window.setTimeout(() => {
@@ -128,6 +133,7 @@ export function useCrosshairProbe(viewer: Viewer | null) {
     currentTime,
     liveWebWeather,
     multiSourceMode,
+    regionalView,
     setProbe,
     reset,
   ])

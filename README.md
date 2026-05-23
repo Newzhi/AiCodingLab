@@ -112,6 +112,29 @@ npm run preview
 | `GET /query/temperature?lat=&lon=&valid_time=` | 点气温（网格 → Open-Meteo，兼容旧路径） |
 | `GET /weather/point?lat=&lon=&valid_time=` | 点气温（grid → Open-Meteo；`prefer_web=true` 走网页链） |
 | `GET /weather/point/multi?lat=&lon=&valid_time=` | **多源并行** + 共识气温与置信度 |
+| `GET /weather/region?lat=&lon=&valid_time=` | **区域平均气温**（网格单元在行政多边形内均值） |
+| `GET /boundaries/countries` | 国家边界 GeoJSON（优先 Natural Earth；离线为简化 bbox） |
+| `GET /boundaries/china_provinces` | 中国省级简化边界 |
+
+## 区域视图（区域气温）
+
+图层开关 **「区域视图」**（默认关）：
+
+- 加载 `data/boundaries/` 下国家 + 中国省级 GeoJSON（鼠标悬停高亮边界）
+- HUD 显示 **区域平均气温 °C**（与当前 `valid_time` 的 GFS/demo 网格一致，摄取时写入 `region_temperatures.json`）
+- 与多源十字准星共存：开启区域视图时 HUD 优先区域聚合气温；关闭后恢复点探针/多源模式
+
+**边界数据许可：**
+
+- 推荐：[Natural Earth](https://www.naturalearthdata.com/) 110m Admin 0（公有领域）
+- 仓库内 fallback 由 `services/api/scripts/seed_boundaries.py` 生成的简化 bbox，仅用于离线开发，见 `data/boundaries/LICENSE.md`
+
+生成/更新 Natural Earth 文件（需网络）：
+
+```bash
+curl -L -o data/boundaries/countries.geojson \
+  https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson
+```
 
 ## 数据准确性策略（多源校验）
 
@@ -190,6 +213,8 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 | Attribution + valid_time | ✅ |
 | GPU ComputeCommand 粒子（风/洋流） | ✅ |
 | 鼠标十字准星 + 网格气温采样 | ✅ |
+| 区域视图 + 区域网格聚合气温 | ✅ |
+| 预报时次紧凑时间轴（芯片/滑块） | ✅ |
 | 多源点查询共识 `/weather/point/multi` | ✅ |
 | Open-Meteo 点查询回退（非爬虫） | ✅ |
 | 分层架构（domain/application/infrastructure） | ✅ |

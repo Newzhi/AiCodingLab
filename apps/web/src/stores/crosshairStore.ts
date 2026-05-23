@@ -26,6 +26,13 @@ export type CrosshairState = {
   sources: WeatherSourceRow[]
   primaryUsed: string
   sourcesExpanded: boolean
+  regionId: string | null
+  regionName: string | null
+  regionNameZh: string | null
+  regionTempC: number | null
+  regionSource: TempSource
+  regionAdminLevel: string | null
+  useRegionalHud: boolean
   setProbe: (
     patch: Partial<
       Omit<
@@ -55,6 +62,13 @@ const initial = {
   sources: [] as WeatherSourceRow[],
   primaryUsed: 'none',
   sourcesExpanded: false,
+  regionId: null as string | null,
+  regionName: null as string | null,
+  regionNameZh: null as string | null,
+  regionTempC: null as number | null,
+  regionSource: 'none' as TempSource,
+  regionAdminLevel: null as string | null,
+  useRegionalHud: false,
 }
 
 export const useCrosshairStore = create<CrosshairState>((set) => ({

@@ -9,6 +9,7 @@ from app.application.demo_ingest import DemoIngestService
 from app.config import settings
 from app.domain.entities import LayerId
 from app.infrastructure.file_storage import default_grid_repository
+from app.infrastructure.processors.region_temperature import write_region_temperatures
 from app.infrastructure.processors.temperature import write_temperature_assets
 from app.infrastructure.processors.terrain_contours import write_terrain_contours_geojson
 from app.infrastructure.processors.uv_grid import write_uv_assets
@@ -68,6 +69,7 @@ class GfsIngestService:
                     lats=lats,
                 )
                 write_terrain_contours_geojson(vt)
+                write_region_temperatures(vt, source="gfs")
                 write_uv_assets(vt, "wind", lons, lats, u10, v10)
                 self._repo.write_manifest(
                     vt,

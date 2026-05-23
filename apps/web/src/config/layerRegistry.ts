@@ -1,6 +1,11 @@
 import type { LayerId } from '../stores/layerStore'
 
-export type LayerType = 'basemap' | 'scalar_texture' | 'geojson' | 'uv_particles'
+export type LayerType =
+  | 'basemap'
+  | 'scalar_texture'
+  | 'geojson'
+  | 'uv_particles'
+  | 'regional_view'
 
 export type LayerRegistryEntry = {
   id: LayerId
@@ -45,6 +50,13 @@ export const LAYER_REGISTRY: LayerRegistryEntry[] = [
     type: 'uv_particles',
     defaultVisible: true,
     description: 'GPU 洋流粒子',
+  },
+  {
+    id: 'regional_view',
+    label: '区域视图',
+    type: 'regional_view',
+    defaultVisible: false,
+    description: '国家/省界高亮，HUD 显示区域平均气温（网格聚合）',
   },
 ]
 

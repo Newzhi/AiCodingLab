@@ -25,11 +25,10 @@ export async function applyTemperatureLayer(
     rectangle: Rectangle.fromDegrees(west, south, east, north),
   })
   // Keep basemap at index 0; weather overlay above it.
-  imageryLayer = viewer.imageryLayers.addImageryProvider(
-    provider,
-    Math.min(viewer.imageryLayers.length, 1),
-  )
-  imageryLayer.alpha = 0.75
+  imageryLayer = viewer.imageryLayers.addImageryProvider(provider)
+  viewer.imageryLayers.raiseToTop(imageryLayer)
+  imageryLayer.alpha = 0.82
+  imageryLayer.show = true
   return {
     min: meta.color_scale_min_c ?? meta.min_c,
     max: meta.color_scale_max_c ?? meta.max_c,

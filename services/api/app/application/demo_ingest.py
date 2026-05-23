@@ -9,6 +9,7 @@ from app.infrastructure.demo_generators import (
     synthetic_uv,
 )
 from app.infrastructure.file_storage import FileGridRepository, default_grid_repository
+from app.infrastructure.processors.region_temperature import write_region_temperatures
 from app.infrastructure.processors.temperature import write_temperature_assets
 from app.infrastructure.processors.terrain_contours import write_terrain_contours_geojson
 from app.infrastructure.processors.uv_grid import write_uv_assets
@@ -35,6 +36,7 @@ class DemoIngestService:
             bounds=[-180, -90, 180, 90],
             lats=lats,
         )
+        write_region_temperatures(valid_time, source="demo")
 
     def generate_for_time(self, valid_time: str) -> None:
         lons, lats, t_c = synthetic_temperature_c(valid_time)
@@ -44,11 +46,13 @@ class DemoIngestService:
             bounds=[-180, -90, 180, 90],
             lats=lats,
         )
+        write_region_temperatures(valid_time, source="demo")
         write_terrain_contours_geojson(valid_time)
         _, _, u, v = synthetic_uv(8.0)
         write_uv_assets(valid_time, "wind", lons, lats, u, v)
         _, _, uo, vo = synthetic_uv(0.4)
         write_uv_assets(valid_time, "ocean", lons, lats, uo, vo)
+        write_region_temperatures(valid_time, source="demo")
         self._repo.write_manifest(valid_time, "demo", [lid.value for lid in ALL_LAYERS])
 
     def generate_demo_times(self) -> list[str]:

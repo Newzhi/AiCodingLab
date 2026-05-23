@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query
 
 from app.application.point_multi_query import PointMultiQueryService
 from app.application.point_query import PointQueryService
+from app.application.region_weather import RegionWeatherService
 from app.config import settings
 
 router = APIRouter(prefix="/weather", tags=["weather"])
@@ -58,4 +59,26 @@ def query_point_weather_multi(
         allow_scrape=allow_scrape,
         use_cache=use_cache,
     )
+    return result.to_dict()
+
+
+@router.get("/region")
+def query_region_weather(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    valid_time: str | None = Query(None, description="ISO valid_time for regional grid mean"),
+):
+    """Regional mean temperature from precomputed grid aggregation inside admin polygon."""
+    result = RegionWeatherService().lookup(lat, lon, valid_time=valid_time)
+    if result is None:
+        return {
+            "region_id": None,
+            "name": None,
+            "name_zh": None,
+            "temp_c": None,
+            "source": "none",
+            "confidence": "low",
+            "bounds": None,
+            "valid_time": valid_time,
+        }
     return result.to_dict()

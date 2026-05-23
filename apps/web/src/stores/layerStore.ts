@@ -7,6 +7,7 @@ export type LayerId =
   | 'terrain_contours'
   | 'wind'
   | 'ocean'
+  | 'regional_view'
 
 type LayerState = {
   layers: Record<LayerId, boolean>

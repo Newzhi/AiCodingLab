@@ -3,6 +3,7 @@ import type { ImageryLayer, Viewer } from 'cesium'
 import { createViewer } from '../cesium/createViewer'
 import { useCrosshairProbe } from '../controllers/useCrosshairProbe'
 import { destroyGlobeLayers, useGlobeLayers } from '../controllers/useGlobeLayers'
+import { useRegionalView } from '../controllers/useRegionalView'
 import { useViewerStore } from '../stores/viewerStore'
 import { LayerErrorBanner } from './LayerErrorBanner'
 
@@ -13,6 +14,7 @@ export function EarthGlobe() {
   const setViewer = useViewerStore((s) => s.setViewer)
 
   useGlobeLayers(viewer, basemapLayer)
+  useRegionalView(viewer)
   useCrosshairProbe(viewer)
 
   useEffect(() => {

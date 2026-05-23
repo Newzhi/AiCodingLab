@@ -35,11 +35,25 @@ export function CrosshairOverlay() {
   const source = useCrosshairStore((s) => s.source)
   const sourcesExpanded = useCrosshairStore((s) => s.sourcesExpanded)
   const toggleSourcesExpanded = useCrosshairStore((s) => s.toggleSourcesExpanded)
+  const useRegionalHud = useCrosshairStore((s) => s.useRegionalHud)
+  const regionNameZh = useCrosshairStore((s) => s.regionNameZh)
+  const regionName = useCrosshairStore((s) => s.regionName)
+  const regionTempC = useCrosshairStore((s) => s.regionTempC)
+  const regionSource = useCrosshairStore((s) => s.regionSource)
+  const regionAdminLevel = useCrosshairStore((s) => s.regionAdminLevel)
 
   if (!active) return null
 
-  const displayTemp = multiSourceMode ? consensusTempC : tempC
+  const displayTemp = useRegionalHud
+    ? regionTempC
+    : multiSourceMode
+      ? consensusTempC
+      : tempC
   const tempLabel = displayTemp === null ? '— °C' : `${displayTemp.toFixed(1)} °C`
+  const regionLabel =
+    regionNameZh || regionName
+      ? `${regionNameZh ?? regionName}${regionAdminLevel === 'province' ? '（省）' : '（国家/地区）'}`
+      : null
   const confidenceClass = `crosshair-confidence crosshair-confidence--${confidence}`
 
   return (
@@ -64,11 +78,19 @@ export function CrosshairOverlay() {
         role="status"
         aria-live="polite"
       >
+        {useRegionalHud && regionLabel && (
+          <div className="crosshair-hud-row crosshair-hud-region">{regionLabel}</div>
+        )}
         <div className="crosshair-hud-row crosshair-hud-coords">
           {formatCoord(lat, 'N', 'S')}, {formatCoord(lon, 'E', 'W')}
         </div>
         <div className={`crosshair-hud-row crosshair-hud-temp ${confidenceClass}`}>
-          {multiSourceMode && <span className="crosshair-hud-consensus-label">共识 </span>}
+          {useRegionalHud && (
+            <span className="crosshair-hud-consensus-label">区域平均气温 </span>
+          )}
+          {!useRegionalHud && multiSourceMode && (
+            <span className="crosshair-hud-consensus-label">共识 </span>
+          )}
           {tempLabel}
           {multiSourceMode && (
             <span className="crosshair-hud-confidence" title="多源离散度置信度">
@@ -77,7 +99,12 @@ export function CrosshairOverlay() {
             </span>
           )}
         </div>
-        {!multiSourceMode && (
+        {useRegionalHud && (
+          <div className="crosshair-hud-row crosshair-hud-source">
+            source: {regionSource} · 网格聚合
+          </div>
+        )}
+        {!useRegionalHud && !multiSourceMode && (
           <div className="crosshair-hud-row crosshair-hud-source">source: {source}</div>
         )}
         {multiSourceMode && sources.length > 0 && (

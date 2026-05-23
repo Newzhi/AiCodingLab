@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     data_dir: Path = ROOT / "data"
     processed_dir: Path = ROOT / "data" / "processed"
+    boundaries_dir: Path = ROOT / "data" / "boundaries"
     raw_dir: Path = ROOT / "data" / "raw"
     point_weather_cache_dir: Path = ROOT / "data" / "cache" / "point_weather"
     point_weather_cache_ttl_sec: int = 900
@@ -41,5 +42,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 settings.processed_dir.mkdir(parents=True, exist_ok=True)
+settings.boundaries_dir.mkdir(parents=True, exist_ok=True)
 settings.raw_dir.mkdir(parents=True, exist_ok=True)
 settings.point_weather_cache_dir.mkdir(parents=True, exist_ok=True)
