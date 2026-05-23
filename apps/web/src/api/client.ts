@@ -53,8 +53,17 @@ export async function fetchAssets(
 
 export function assetUrl(path: string): string {
   if (path.startsWith('http')) return path
+  // Same-origin /static via Vite dev proxy — required for Cesium WebGL textures.
+  if (path.startsWith('/static/')) return path
   const base = API_BASE.replace(/\/$/, '')
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
+}
+
+export async function triggerDemoIngest(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/ingest/demo`, { method: 'POST' })
+  if (!res.ok) throw new Error('Demo ingest failed')
+  const data = await res.json()
+  return (data.valid_times as string[]) ?? []
 }
 
 export type RegionWeatherResponse = {

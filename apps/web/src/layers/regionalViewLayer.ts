@@ -17,13 +17,13 @@ let dataSource: GeoJsonDataSource | null = null
 let entityByRegionId = new Map<string, Entity>()
 
 const STYLE_DIM = {
-  fill: Color.CYAN.withAlpha(0.06),
-  outline: Color.CYAN.withAlpha(0.35),
-  outlineWidth: 1,
+  fill: Color.CYAN.withAlpha(0.1),
+  outline: Color.CYAN.withAlpha(0.55),
+  outlineWidth: 1.5,
 }
 
 const STYLE_HIGHLIGHT = {
-  fill: Color.YELLOW.withAlpha(0.18),
+  fill: Color.YELLOW.withAlpha(0.28),
   outline: Color.YELLOW,
   outlineWidth: 3,
 }
@@ -37,7 +37,11 @@ function propString(entity: Entity, key: string): string | null {
 }
 
 function regionIdFromEntity(entity: Entity): string | null {
-  return propString(entity, 'id') ?? propString(entity, 'ISO_A3')
+  return (
+    propString(entity, 'id') ??
+    propString(entity, 'ISO_A3') ??
+    propString(entity, 'name')
+  )
 }
 
 function applyEntityStyle(entity: Entity, highlight: boolean): void {
@@ -53,8 +57,16 @@ function applyEntityStyle(entity: Entity, highlight: boolean): void {
   }
 }
 
+function isDataSourceOnViewer(viewer: Viewer): boolean {
+  return dataSource !== null && viewer.dataSources.contains(dataSource)
+}
+
 export async function applyRegionalViewLayer(viewer: Viewer): Promise<void> {
-  if (dataSource) return
+  if (isDataSourceOnViewer(viewer)) return
+  if (dataSource) {
+    dataSource = null
+    entityByRegionId = new Map()
+  }
 
   const [countries, provinces] = await Promise.all([
     fetchCountriesGeoJson(),
@@ -86,8 +98,14 @@ export function highlightRegion(regionId: string | null): void {
 }
 
 export function removeRegionalViewLayer(viewer: Viewer): void {
-  if (dataSource) {
-    viewer.dataSources.remove(dataSource, true)
+  if (!dataSource) return
+  try {
+    if (!viewer.isDestroyed() && viewer.dataSources.contains(dataSource)) {
+      viewer.dataSources.remove(dataSource, true)
+    }
+  } catch (err) {
+    console.warn('removeRegionalViewLayer', err)
+  } finally {
     dataSource = null
     entityByRegionId = new Map()
   }

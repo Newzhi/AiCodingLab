@@ -22,14 +22,6 @@ async def lifespan(_app: FastAPI):
         service.generate_demo_times()
     else:
         service.repair_existing_times()
-        for vt in list_valid_times():
-            from app.infrastructure.processors.region_temperature import (
-                read_region_temperatures,
-                write_region_temperatures,
-            )
-
-            if read_region_temperatures(vt) is None:
-                write_region_temperatures(vt, source="demo")
     start_scheduler()
     yield
     stop_scheduler()

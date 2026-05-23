@@ -15,6 +15,7 @@ import {
 } from '../layers/regionalViewLayer'
 import { useCrosshairStore, type Confidence } from '../stores/crosshairStore'
 import { useLayerStore } from '../stores/layerStore'
+import { useLayerErrorStore } from '../stores/layerErrorStore'
 
 const REGION_DEBOUNCE_MS = 100
 
@@ -23,6 +24,8 @@ export function useRegionalView(viewer: Viewer | null) {
   const currentTime = useLayerStore((s) => s.currentTime)
   const setProbe = useCrosshairStore((s) => s.setProbe)
   const reset = useCrosshairStore((s) => s.reset)
+  const setError = useLayerErrorStore((s) => s.setError)
+  const clearError = useLayerErrorStore((s) => s.clearError)
   const loadGen = useRef(0)
   const regionTimer = useRef<number | null>(null)
   const regionGen = useRef(0)
@@ -38,16 +41,22 @@ export function useRegionalView(viewer: Viewer | null) {
         removeRegionalViewLayer(viewer!)
         highlightRegion(null)
         setProbe({ useRegionalHud: false })
+        clearError('regional_view')
         return
       }
       try {
         await applyRegionalViewLayer(viewer!)
         if (!cancelled && gen === loadGen.current) {
           setProbe({ useRegionalHud: true })
+          clearError('regional_view')
         }
       } catch (err) {
         console.error('Regional view load failed', err)
-        if (!cancelled) setProbe({ useRegionalHud: false })
+        if (!cancelled && gen === loadGen.current) {
+          setProbe({ useRegionalHud: false })
+          const msg = err instanceof Error ? err.message : '区域边界加载失败'
+          setError('regional_view', msg)
+        }
       }
     }
 
@@ -56,7 +65,7 @@ export function useRegionalView(viewer: Viewer | null) {
       cancelled = true
       if (!regionalView) removeRegionalViewLayer(viewer)
     }
-  }, [viewer, regionalView, setProbe])
+  }, [viewer, regionalView, setProbe, setError, clearError])
 
   useEffect(() => {
     if (!viewer || viewer.isDestroyed() || !regionalView) return
@@ -102,6 +111,11 @@ export function useRegionalView(viewer: Viewer | null) {
         void fetchRegionWeather(ll.lat, ll.lon, currentTime).then((region) => {
           if (gen !== regionGen.current) return
           highlightRegion(region.region_id)
+          if (!region.region_id) {
+            setError('regional_view', '未识别行政区域 — 请检查边界数据')
+          } else {
+            clearError('regional_view')
+          }
           const confidence = (region.confidence ?? 'low') as Confidence
           setProbe({
             regionId: region.region_id,
@@ -131,5 +145,5 @@ export function useRegionalView(viewer: Viewer | null) {
       handler.destroy()
       highlightRegion(null)
     }
-  }, [viewer, regionalView, currentTime, setProbe, reset])
+  }, [viewer, regionalView, currentTime, setProbe, reset, setError, clearError])
 }

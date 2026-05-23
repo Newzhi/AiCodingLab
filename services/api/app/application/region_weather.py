@@ -63,7 +63,9 @@ class RegionWeatherService:
             return None
 
         props = feature.get("properties", {})
-        region_id = str(props.get("id") or props.get("name"))
+        region_id = str(
+            props.get("id") or props.get("ISO_A3") or props.get("name")
+        )
         name = str(props.get("name") or region_id)
         name_zh = str(props.get("name_zh") or name)
         admin_level = str(props.get("admin_level", "country"))

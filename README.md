@@ -7,6 +7,7 @@ Monorepo：Cesium 3D 地球 + FastAPI 预处理 GFS / Copernicus 海洋数据。
 - GitHub: https://github.com/Newzhi/AiCodingLab.git
 - 协作手册: [AGENTS.md](AGENTS.md)
 - 团队章程: [docs/TEAM.md](docs/TEAM.md)
+- **UI 设计规格**: [docs/design/UI_SPEC.md](docs/design/UI_SPEC.md)
 - 新需求模板: [docs/REQUEST_TEMPLATE.md](docs/REQUEST_TEMPLATE.md)
 
 ## 快速开始

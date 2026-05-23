@@ -3,6 +3,7 @@ import { fetchManifest } from '../api/client'
 
 type Props = {
   validTime: string | null
+  compact?: boolean
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -17,7 +18,7 @@ function sourceLabel(source: string): string {
   return SOURCE_LABELS[source] ?? `数据来源：${source}`
 }
 
-export function Attribution({ validTime }: Props) {
+export function Attribution({ validTime, compact = false }: Props) {
   const { data: manifest } = useQuery({
     queryKey: ['manifest', validTime],
     queryFn: () => fetchManifest(validTime!),
@@ -29,6 +30,21 @@ export function Attribution({ validTime }: Props) {
     import.meta.env.VITE_CESIUM_ION_TOKEN !== 'your_cesium_ion_token_here'
       ? '底图：Cesium Ion'
       : '底图：Esri World Imagery（无需 Token）'
+
+  if (compact) {
+    return (
+      <footer className="attribution attribution--compact">
+        <span>{basemapNote}</span>
+        {manifest && (
+          <span className="attribution-source">
+            · <strong>{sourceLabel(manifest.source)}</strong>
+          </span>
+        )}
+        {validTime && <span className="attribution-time"> · {validTime}</span>}
+        {!validTime && <span className="attribution-warn"> · 无可用时次</span>}
+      </footer>
+    )
+  }
 
   return (
     <footer className="attribution">

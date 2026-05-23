@@ -9,7 +9,10 @@ from app.infrastructure.demo_generators import (
     synthetic_uv,
 )
 from app.infrastructure.file_storage import FileGridRepository, default_grid_repository
-from app.infrastructure.processors.region_temperature import write_region_temperatures
+from app.infrastructure.processors.region_temperature import (
+    read_region_temperatures,
+    write_region_temperatures,
+)
 from app.infrastructure.processors.temperature import write_temperature_assets
 from app.infrastructure.processors.terrain_contours import write_terrain_contours_geojson
 from app.infrastructure.processors.uv_grid import write_uv_assets
@@ -66,14 +69,24 @@ class DemoIngestService:
         return times
 
     def repair_existing_times(self) -> None:
-        """Ensure terrain_contours and temperature grid exist for all stored times."""
+        """Ensure terrain_contours and temperature assets exist for all stored times."""
         for vt in self._repo.list_valid_times():
             self._repo.ensure_terrain_contours(vt)
-            if not self._repo.layer_file_exists(vt, LayerId.TEMPERATURE, "grid"):
+            missing_png = not self._repo.layer_file_exists(
+                vt, LayerId.TEMPERATURE, "texture"
+            )
+            missing_grid = not self._repo.layer_file_exists(
+                vt, LayerId.TEMPERATURE, "grid"
+            )
+            if missing_png or missing_grid:
                 try:
                     self.regenerate_temperature_for_time(vt)
                 except Exception as exc:
-                    logger.warning("Could not repair temperature grid for %s: %s", vt, exc)
+                    logger.warning(
+                        "Could not repair temperature for %s: %s", vt, exc
+                    )
+            if read_region_temperatures(vt) is None:
+                write_region_temperatures(vt, source="demo")
 
 
 def generate_demo_times() -> list[str]:

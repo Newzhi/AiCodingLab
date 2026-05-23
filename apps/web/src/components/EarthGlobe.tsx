@@ -4,6 +4,8 @@ import { createViewer } from '../cesium/createViewer'
 import { useCrosshairProbe } from '../controllers/useCrosshairProbe'
 import { destroyGlobeLayers, useGlobeLayers } from '../controllers/useGlobeLayers'
 import { useRegionalView } from '../controllers/useRegionalView'
+import { removeTemperatureLayer } from '../layers/temperatureLayer'
+import { removeRegionalViewLayer } from '../layers/regionalViewLayer'
 import { useViewerStore } from '../stores/viewerStore'
 import { LayerErrorBanner } from './LayerErrorBanner'
 
@@ -25,6 +27,8 @@ export function EarthGlobe() {
     setViewer(created.viewer)
     return () => {
       destroyGlobeLayers(created.viewer)
+      removeTemperatureLayer(created.viewer)
+      removeRegionalViewLayer(created.viewer)
       created.viewer.destroy()
       setViewerState(null)
       setBasemapLayer(null)

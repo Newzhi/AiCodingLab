@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fetchTimes } from './api/client'
+import { fetchTimes, triggerDemoIngest } from './api/client'
 import { EarthGlobe } from './components/EarthGlobe'
 import { LayerPanel } from './components/LayerPanel'
 import { FlyToPanel } from './components/FlyToPanel'
@@ -10,6 +10,7 @@ import { Legend } from './components/Legend'
 import { Attribution } from './components/Attribution'
 import { CrosshairOverlay } from './components/CrosshairOverlay'
 import { useLayerStore } from './stores/layerStore'
+import { pickNearestValidTime } from './utils/timeSelection'
 import './App.css'
 
 const queryClient = new QueryClient()
@@ -17,6 +18,8 @@ const queryClient = new QueryClient()
 function AppInner() {
   const currentTime = useLayerStore((s) => s.currentTime)
   const setCurrentTime = useLayerStore((s) => s.setCurrentTime)
+  const qc = useQueryClient()
+  const demoTriggered = useRef(false)
 
   const { data: times = [], isError, isLoading } = useQuery({
     queryKey: ['times'],
@@ -26,8 +29,25 @@ function AppInner() {
   })
 
   useEffect(() => {
-    if (times.length && !currentTime) {
-      setCurrentTime(times[0])
+    if (isLoading || isError || times.length > 0 || demoTriggered.current) return
+    demoTriggered.current = true
+    void triggerDemoIngest()
+      .then(() => qc.invalidateQueries({ queryKey: ['times'] }))
+      .catch(() => {
+        demoTriggered.current = false
+      })
+  }, [isLoading, isError, times.length, qc])
+
+  useEffect(() => {
+    if (!times.length) return
+    const nearest = pickNearestValidTime(times)
+    if (!nearest) return
+    if (!currentTime) {
+      setCurrentTime(nearest)
+      return
+    }
+    if (!times.includes(currentTime)) {
+      setCurrentTime(nearest)
     }
   }, [times, currentTime, setCurrentTime])
 
@@ -42,7 +62,7 @@ function AppInner() {
           <div className="api-banner">
             {isError
               ? '无法连接后端 API — 请先运行 start-backend.bat 或 start.bat'
-              : '无预处理数据 — 请运行 POST http://localhost:8000/ingest/demo'}
+              : '正在生成演示数据…'}
           </div>
         )}
         <EarthGlobe />
@@ -53,8 +73,8 @@ function AppInner() {
           onChange={setCurrentTime}
         />
         <Legend />
+        <Attribution validTime={currentTime} compact />
       </main>
-      <Attribution validTime={currentTime} />
     </div>
   )
 }
