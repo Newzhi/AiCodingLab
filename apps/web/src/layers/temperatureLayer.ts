@@ -14,8 +14,8 @@ export async function applyTemperatureLayer(
 ): Promise<{ min: number; max: number } | null> {
   removeTemperatureLayer(viewer)
   const assets = await fetchAssets(validTime, 'temperature')
-  const textureUrl = assetUrl(assets.files.texture || assets.files.temperature)
-  const metaUrl = assetUrl(assets.files.meta || assets.files.temperature_meta)
+  const textureUrl = assetUrl(assets.files.texture)
+  const metaUrl = assetUrl(assets.files.meta)
 
   const metaRes = await fetch(metaUrl)
   const meta = await metaRes.json()

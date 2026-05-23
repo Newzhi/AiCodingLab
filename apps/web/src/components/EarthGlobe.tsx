@@ -8,10 +8,10 @@ import {
   removeTemperatureLayer,
 } from '../layers/temperatureLayer'
 import { applyIsobarsLayer, removeIsobarsLayer } from '../layers/isobarsLayer'
-import { UvParticleLayer } from '../layers/uvParticleLayer'
+import { GpuUvParticleLayer } from '../layers/uvParticleLayer'
 
-const windLayer = new UvParticleLayer(Color.CYAN.withAlpha(0.85))
-const oceanLayer = new UvParticleLayer(Color.DEEPSKYBLUE.withAlpha(0.9))
+const windLayer = new GpuUvParticleLayer(Color.CYAN.withAlpha(0.85))
+const oceanLayer = new GpuUvParticleLayer(Color.DEEPSKYBLUE.withAlpha(0.9))
 
 export function EarthGlobe() {
   const containerRef = useRef<HTMLDivElement>(null)
