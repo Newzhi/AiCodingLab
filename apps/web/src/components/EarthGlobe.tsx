@@ -3,11 +3,15 @@ import type { ImageryLayer, Viewer } from 'cesium'
 import { Color } from 'cesium'
 import { createViewer, setBasemapVisible } from '../cesium/createViewer'
 import { useLayerStore } from '../stores/layerStore'
+import { useViewerStore } from '../stores/viewerStore'
 import {
   applyTemperatureLayer,
   removeTemperatureLayer,
 } from '../layers/temperatureLayer'
-import { applyIsobarsLayer, removeIsobarsLayer } from '../layers/isobarsLayer'
+import {
+  applyTerrainContoursLayer,
+  removeTerrainContoursLayer,
+} from '../layers/terrainContoursLayer'
 import { GpuUvParticleLayer } from '../layers/uvParticleLayer'
 
 const windLayer = new GpuUvParticleLayer(Color.CYAN.withAlpha(0.85))
@@ -17,6 +21,7 @@ export function EarthGlobe() {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const basemapLayerRef = useRef<ImageryLayer | null>(null)
+  const setViewer = useViewerStore((s) => s.setViewer)
   const layers = useLayerStore((s) => s.layers)
   const currentTime = useLayerStore((s) => s.currentTime)
   const setTempRange = useLayerStore((s) => s.setTempRange)
@@ -26,14 +31,16 @@ export function EarthGlobe() {
     const { viewer, basemapLayer } = createViewer(containerRef.current)
     viewerRef.current = viewer
     basemapLayerRef.current = basemapLayer
+    setViewer(viewer)
     return () => {
       windLayer.destroy(viewerRef.current!)
       oceanLayer.destroy(viewerRef.current!)
       viewerRef.current?.destroy()
       viewerRef.current = null
       basemapLayerRef.current = null
+      setViewer(null)
     }
-  }, [])
+  }, [setViewer])
 
   useEffect(() => {
     setBasemapVisible(basemapLayerRef.current, layers.basemap)
@@ -56,10 +63,10 @@ export function EarthGlobe() {
           if (!cancelled) setTempRange(null)
         }
 
-        if (layers.isobars) {
-          await applyIsobarsLayer(viewer, time)
+        if (layers.terrain_contours) {
+          await applyTerrainContoursLayer(viewer, time)
         } else {
-          await removeIsobarsLayer(viewer)
+          await removeTerrainContoursLayer(viewer)
         }
 
         if (layers.wind) {

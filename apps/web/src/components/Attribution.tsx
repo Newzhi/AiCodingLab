@@ -33,9 +33,10 @@ export function Attribution({ validTime }: Props) {
   return (
     <footer className="attribution">
       <p>
-        气象图层：NOAA GFS（气温/气压/风）、Copernicus Marine（洋流）。仅供科研演示，商用请核对许可。
+        气象图层：NOAA GFS（气温/风）、Copernicus Marine（洋流）；地势等高线来自合成全球 DEM（演示）。
+        仅供科研演示，商用请核对许可。
       </p>
-      <p>{basemapNote}</p>
+      <p>{basemapNote} · 视图锁定为 3D 球体（无平面地图模式）</p>
       {manifest && (
         <p className="attribution-source">
           当前时次数据：<strong>{sourceLabel(manifest.source)}</strong>

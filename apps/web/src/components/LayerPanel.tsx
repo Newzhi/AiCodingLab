@@ -3,7 +3,7 @@ import { useLayerStore, type LayerId } from '../stores/layerStore'
 const LABELS: Record<LayerId, string> = {
   basemap: '底图',
   temperature: '气温 (2m)',
-  isobars: '等压线',
+  terrain_contours: '地势等高线',
   wind: '风场粒子',
   ocean: '洋流粒子',
 }

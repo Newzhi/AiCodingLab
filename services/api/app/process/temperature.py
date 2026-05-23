@@ -9,6 +9,10 @@ from PIL import Image
 
 from app.config import settings
 
+# Fixed color scale for geographically meaningful coloring (poles cold, tropics warm).
+COLOR_SCALE_MIN_C = -40.0
+COLOR_SCALE_MAX_C = 40.0
+
 
 def _time_dir(valid_time: str) -> Path:
     safe = valid_time.replace(":", "-")
@@ -21,13 +25,20 @@ def write_temperature_assets(
     valid_time: str,
     t2m_k: np.ndarray,
     bounds: list[float],
+    lats: np.ndarray | None = None,
 ) -> Path:
-    """Render 2m temperature (Kelvin) to PNG + meta JSON."""
+    """Render 2m temperature (Kelvin) to north-up PNG + meta JSON."""
     tdir = _time_dir(valid_time)
-    t_c = t2m_k - 273.15
-    vmin, vmax = float(np.nanmin(t_c)), float(np.nanmax(t_c))
+    t_c = np.asarray(t2m_k, dtype=float) - 273.15
 
-    norm = (t_c - vmin) / max(vmax - vmin, 1e-6)
+    # Ensure row 0 = northernmost latitude (Cesium north-up imagery).
+    if lats is not None and len(lats) > 1 and float(lats[0]) < float(lats[-1]):
+        t_c = np.flipud(t_c)
+
+    data_min, data_max = float(np.nanmin(t_c)), float(np.nanmax(t_c))
+
+    span = COLOR_SCALE_MAX_C - COLOR_SCALE_MIN_C
+    norm = (t_c - COLOR_SCALE_MIN_C) / max(span, 1e-6)
     cmap = plt.get_cmap("coolwarm")
     rgba = cmap(np.clip(norm, 0, 1))
     rgba = (rgba * 255).astype(np.uint8)
@@ -40,8 +51,10 @@ def write_temperature_assets(
     meta = {
         "valid_time": valid_time,
         "bounds": bounds,
-        "min_c": vmin,
-        "max_c": vmax,
+        "min_c": data_min,
+        "max_c": data_max,
+        "color_scale_min_c": COLOR_SCALE_MIN_C,
+        "color_scale_max_c": COLOR_SCALE_MAX_C,
         "unit": "celsius",
     }
     meta_path = tdir / "temperature.meta.json"

@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 
-export type LayerId = 'basemap' | 'temperature' | 'isobars' | 'wind' | 'ocean'
+export type LayerId =
+  | 'basemap'
+  | 'temperature'
+  | 'terrain_contours'
+  | 'wind'
+  | 'ocean'
 
 type LayerState = {
   layers: Record<LayerId, boolean>
@@ -15,7 +20,7 @@ export const useLayerStore = create<LayerState>((set) => ({
   layers: {
     basemap: true,
     temperature: true,
-    isobars: false,
+    terrain_contours: false,
     wind: false,
     ocean: false,
   },

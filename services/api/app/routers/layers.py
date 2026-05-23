@@ -19,11 +19,11 @@ CATALOG = [
         "default": True,
     },
     {
-        "id": "isobars",
-        "name": "等压线",
+        "id": "terrain_contours",
+        "name": "地势等高线",
         "type": "geojson",
-        "variable": "msl",
-        "source": "NOAA GFS via Herbie",
+        "variable": "elevation",
+        "source": "Synthetic global DEM (demo) / ETOPO-class elevation",
         "default": False,
     },
     {

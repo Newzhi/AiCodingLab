@@ -19,7 +19,7 @@ alwaysApply: true
 - 前端：`apps/web/`，Cesium + Zustand
 - 后端：`services/api/`，FastAPI 分层 `routers/` `ingest/` `process/`
 - 数据：`data/processed/{valid_time}/`，不入库
-- 图层 ID：`temperature` | `isobars` | `wind` | `ocean`
+- 图层 ID：`temperature` | `terrain_contours` | `wind` | `ocean`
 - 业务 colormap / 图例色阶：须 **美术设计师** 规格或 PR 中 `@designer` 评审
 
 ## 禁止

@@ -7,7 +7,7 @@ import numpy as np
 
 from app.config import settings
 from app.process.demo import generate_demo_times
-from app.process.isobars import contours_to_geojson, write_isobars_geojson
+from app.process.terrain_contours import write_terrain_contours_geojson
 from app.process.temperature import write_temperature_assets
 from app.process.uv_grid import write_uv_assets
 
@@ -24,7 +24,7 @@ def _write_manifest(valid_time: str, source: str = "gfs") -> None:
     manifest = {
         "valid_time": valid_time,
         "source": source,
-        "layers": ["temperature", "isobars", "wind"],
+        "layers": ["temperature", "terrain_contours", "wind"],
     }
     (tdir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
@@ -47,7 +47,6 @@ def ingest_gfs() -> dict:
         )
         for fxx in settings.forecast_hours:
             ds_t = H.xarray("TMP:2 m", fxx=fxx)
-            ds_m = H.xarray("PRMSL", fxx=fxx)
             ds_u = H.xarray("UGRD:10 m", fxx=fxx)
             ds_v = H.xarray("VGRD:10 m", fxx=fxx)
 
@@ -58,7 +57,6 @@ def ingest_gfs() -> dict:
                 vt = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             t2m = np.asarray(ds_t[list(ds_t.data_vars)[0]].values, dtype=float)
-            msl = np.asarray(ds_m[list(ds_m.data_vars)[0]].values, dtype=float)
             u10 = np.asarray(ds_u[list(ds_u.data_vars)[0]].values, dtype=float)
             v10 = np.asarray(ds_v[list(ds_v.data_vars)[0]].values, dtype=float)
 
@@ -67,9 +65,18 @@ def ingest_gfs() -> dict:
             if lons.max() > 180:
                 lons = ((lons + 180) % 360) - 180
 
-            write_temperature_assets(vt, t2m, bounds=[float(lons.min()), float(lats.min()), float(lons.max()), float(lats.max())])
-            geojson = contours_to_geojson(lons, lats, msl / 100.0)
-            write_isobars_geojson(vt, geojson)
+            write_temperature_assets(
+                vt,
+                t2m,
+                bounds=[
+                    float(lons.min()),
+                    float(lats.min()),
+                    float(lons.max()),
+                    float(lats.max()),
+                ],
+                lats=lats,
+            )
+            write_terrain_contours_geojson(vt)
             write_uv_assets(vt, "wind", lons, lats, u10, v10)
             _write_manifest(vt, "gfs")
             processed.append(vt)

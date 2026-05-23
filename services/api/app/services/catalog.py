@@ -10,8 +10,8 @@ LAYER_FILES: dict[str, dict[str, str]] = {
         "texture": "temperature.png",
         "meta": "temperature.meta.json",
     },
-    "isobars": {
-        "geojson": "isobars.geojson",
+    "terrain_contours": {
+        "geojson": "terrain_contours.geojson",
     },
     "wind": {
         "meta": "wind.uv.json",
@@ -22,6 +22,9 @@ LAYER_FILES: dict[str, dict[str, str]] = {
         "binary": "ocean.uv.bin",
     },
 }
+
+# Legacy layer id → file (removed pressure isobars; kept for 404 clarity only).
+_DEPRECATED_LAYERS = {"isobars": "pressure isobars removed; use terrain_contours"}
 
 
 def _time_dir(valid_time: str) -> Path:
@@ -41,7 +44,6 @@ def list_valid_times() -> list[str]:
             data = json.loads(meta.read_text(encoding="utf-8"))
             times.append(data.get("valid_time", entry.name))
         elif (entry / "temperature.png").exists():
-            # folder name uses dashes instead of colons
             name = entry.name
             if "T" in name and name.count("-") >= 3:
                 parts = name.split("T")
@@ -61,6 +63,9 @@ def get_time_manifest(valid_time: str) -> dict | None:
 
 
 def get_layer_assets(valid_time: str, layer_id: str) -> dict:
+    if layer_id in _DEPRECATED_LAYERS:
+        raise FileNotFoundError(_DEPRECATED_LAYERS[layer_id])
+
     if layer_id not in LAYER_FILES:
         raise FileNotFoundError(f"Unknown layer: {layer_id}")
 
@@ -73,6 +78,11 @@ def get_layer_assets(valid_time: str, layer_id: str) -> dict:
     files: dict[str, str] = {}
     for key, fname in LAYER_FILES[layer_id].items():
         path = tdir / fname
+        if not path.exists() and layer_id == "terrain_contours":
+            legacy = tdir / "isobars.geojson"
+            if legacy.exists():
+                fname = "isobars.geojson"
+                path = legacy
         if not path.exists():
             raise FileNotFoundError(f"Missing {fname} for {layer_id} at {valid_time}")
         files[key] = f"{base_url}/{fname}"

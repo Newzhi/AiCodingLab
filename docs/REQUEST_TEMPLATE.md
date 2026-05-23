@@ -22,6 +22,8 @@
 
 （用户可见行为、交互、数据范围）
 
+**当前图层 ID（参考）**：`basemap` · `temperature` · `terrain_contours`（地势等高线）· `wind` · `ocean`
+
 ## 5. 验收标准
 
 - [ ] 标准 1

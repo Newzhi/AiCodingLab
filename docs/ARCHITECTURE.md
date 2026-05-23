@@ -23,7 +23,7 @@ CMEMS (Toolbox)  ───┘         │
                          FastAPI /assets
                                 │
                                 ▼
-                    Cesium 图层 (气温/等压线/粒子)
+                    Cesium 图层 (气温/地势等高线/粒子)
 ```
 
 ## 3. 预处理产物
@@ -31,7 +31,7 @@ CMEMS (Toolbox)  ───┘         │
 | 图层 ID | 文件 | 说明 |
 |---------|------|------|
 | `temperature` | `temperature.png` + `temperature.meta.json` | 2m 气温 EPSG:4326 纹理 |
-| `isobars` | `isobars.geojson` | 海平面气压等值线 |
+| `terrain_contours` | `terrain_contours.geojson` | 地势海拔等高线（非气压） |
 | `wind` | `wind.uv.json` + `wind.uv.bin` | U/V 规则网格（float32） |
 | `ocean` | `ocean.uv.json` + `ocean.uv.bin` | 洋流 U/V |
 
@@ -65,7 +65,7 @@ CMEMS (Toolbox)  ───┘         │
 ```
 src/
 ├── cesium/          # Viewer 初始化
-├── layers/          # temperature, isobars, windParticles, oceanParticles
+├── layers/          # temperature, terrainContours, uv particles
 ├── components/      # LayerPanel, Timeline, Legend, Attribution
 ├── stores/          # layerVisibility, currentTime
 └── api/             # fetch catalog, times, assets
@@ -80,7 +80,7 @@ src/
 - TypeScript：`strict` 开启；组件函数式 + hooks
 - Python：类型注解；`app/` 包内相对导入；路由放 `routers/`
 - 禁止在业务代码中硬编码密钥
-- 图层 ID 枚举：`temperature` | `isobars` | `wind` | `ocean` | `basemap`
+- 图层 ID 枚举：`temperature` | `terrain_contours` | `wind` | `ocean` | `basemap`
 
 ## 8. 性能目标
 

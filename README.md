@@ -125,7 +125,9 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 | 项 | 状态 |
 |----|------|
 | Cesium 3D 地球可旋转缩放 | ✅ |
-| 四图层独立开关（气温/等压线/风/洋流） | ✅ |
+| 四图层独立开关（气温/地势等高线/风/洋流） | ✅ |
+| 仅 3D 球体（无 2D 平面地图） | ✅ |
+| 经纬度定位飞行 | ✅ |
 | GFS/CMEMS 管线 + 演示/合成回退 | ✅ |
 | 时间轴 ≥2 时次 | ✅ |
 | Attribution + valid_time | ✅ |
@@ -145,7 +147,7 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 3. 确认浏览器控制台无 Cesium CSS 404；`apps/web/src/index.css` 应包含 `@import 'cesium/Build/Cesium/Widgets/widgets.css'`。
 4. 若仍无底图，打开 DevTools → Network，检查 `{z}/{y}/{x}` 瓦片是否 200。
 
-### 气温/等压线/粒子图层不显示
+### 气温/地势等高线/粒子图层不显示
 
 1. **必须先启动后端**：`start-backend.bat` 或 `start.bat`。前端依赖 `http://localhost:8000`。
 2. 确认 `GET http://localhost:8000/times` 返回 ≥1 个时次；若无数据：`curl -X POST http://localhost:8000/ingest/demo`。
@@ -162,6 +164,18 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 | GFS 失败回退 | `demo`（重新生成） | 摄取失败时自动调用演示管线 |
 | 合成洋流 | `synthetic` | 无 CMEMS 凭据时 `POST /ingest/cmems` |
 | 真实 CMEMS | `cmems` | `.env` 配置凭据后摄取 |
+
+### 图层说明（地势 vs 气压、气温色标）
+
+| 图层 ID | 含义 | 演示数据来源 | 真实数据 |
+|---------|------|--------------|----------|
+| `temperature` | GFS 2m 气温 (°C) | 合成纬度气候场；色标固定 **-40 ~ +40°C**（coolwarm） | Herbie GFS `TMP:2 m`（Kelvin → °C） |
+| `terrain_contours` | **地势等高线**（海拔，非海平面气压） | 合成全球 DEM + 500m 等高线 | 同上（静态，不随预报时次变化） |
+| `wind` / `ocean` | 风场 / 洋流粒子 | 合成 UV | GFS / CMEMS |
+
+**已移除**：`isobars`（海平面气压等压线）。旧目录若仅有 `isobars.geojson`，请重新 `POST /ingest/demo` 生成 `terrain_contours.geojson`。
+
+**气温验证（演示）**：开启气温图层后，赤道附近应偏暖（红/暖色），高纬极地应偏冷（蓝/冷色）；图例显示固定色标 -40°C ~ +40°C。
 
 页面底部 **Attribution** 会显示当前 `valid_time` 的数据来源。真实 GFS 验证步骤：
 

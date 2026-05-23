@@ -4,6 +4,7 @@ import {
   EllipsoidTerrainProvider,
   UrlTemplateImageryProvider,
   Credit,
+  SceneMode,
   type ImageryLayer,
 } from 'cesium'
 
@@ -45,10 +46,18 @@ export function createViewer(container: HTMLElement): EarthViewer {
     baseLayerPicker: false,
     geocoder: false,
     homeButton: true,
-    sceneModePicker: true,
+    sceneModePicker: false,
     navigationHelpButton: false,
     fullscreenButton: true,
     terrainProvider: new EllipsoidTerrainProvider(),
+  })
+
+  viewer.scene.mode = SceneMode.SCENE3D
+  viewer.scene.preRender.addEventListener(() => {
+    if (viewer.isDestroyed()) return
+    if (viewer.scene.mode !== SceneMode.SCENE3D) {
+      viewer.scene.mode = SceneMode.SCENE3D
+    }
   })
 
   if (!useIon) {

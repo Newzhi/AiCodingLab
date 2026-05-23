@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fetchTimes } from './api/client'
 import { EarthGlobe } from './components/EarthGlobe'
 import { LayerPanel } from './components/LayerPanel'
+import { FlyToPanel } from './components/FlyToPanel'
 import { Timeline } from './components/Timeline'
 import { Legend } from './components/Legend'
 import { Attribution } from './components/Attribution'
@@ -31,7 +32,10 @@ function AppInner() {
 
   return (
     <div className="app">
-      <LayerPanel />
+      <div className="sidebar">
+        <LayerPanel />
+        <FlyToPanel />
+      </div>
       <main className="globe-wrap">
         {(isError || (!isLoading && times.length === 0)) && (
           <div className="api-banner">

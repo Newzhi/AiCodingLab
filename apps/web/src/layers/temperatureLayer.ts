@@ -30,7 +30,10 @@ export async function applyTemperatureLayer(
     Math.min(viewer.imageryLayers.length, 1),
   )
   imageryLayer.alpha = 0.75
-  return { min: meta.min_c, max: meta.max_c }
+  return {
+    min: meta.color_scale_min_c ?? meta.min_c,
+    max: meta.color_scale_max_c ?? meta.max_c,
+  }
 }
 
 export function removeTemperatureLayer(viewer: Viewer): void {
