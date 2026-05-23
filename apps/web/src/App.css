@@ -12,11 +12,13 @@
 .globe-wrap {
   position: relative;
   min-height: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .cesium-container {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
 }
 
 .panel {
@@ -100,4 +102,26 @@
 
 .attribution p {
   margin: 0.15rem 0;
+}
+
+.attribution-source strong {
+  color: #7dd3fc;
+}
+
+.attribution-warn {
+  color: #fbbf24;
+}
+
+.api-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: rgba(180, 83, 9, 0.92);
+  color: #fff;
+  font-size: 0.85rem;
+  pointer-events: none;
 }

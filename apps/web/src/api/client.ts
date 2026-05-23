@@ -14,6 +14,12 @@ export type AssetResponse = {
   files: Record<string, string>
 }
 
+export type TimeManifest = {
+  valid_time: string
+  source: 'demo' | 'gfs' | 'synthetic' | 'cmems' | string
+  layers: string[]
+}
+
 export async function fetchCatalog(): Promise<LayerMeta[]> {
   const res = await fetch(`${API_BASE}/layers/catalog`)
   if (!res.ok) throw new Error('Failed to load layer catalog')
@@ -26,6 +32,13 @@ export async function fetchTimes(): Promise<string[]> {
   if (!res.ok) throw new Error('Failed to load times')
   const data = await res.json()
   return data.times as string[]
+}
+
+export async function fetchManifest(validTime: string): Promise<TimeManifest> {
+  const encoded = encodeURIComponent(validTime)
+  const res = await fetch(`${API_BASE}/times/${encoded}/manifest`)
+  if (!res.ok) throw new Error(`Manifest not found for ${validTime}`)
+  return res.json()
 }
 
 export async function fetchAssets(

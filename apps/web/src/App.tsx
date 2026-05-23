@@ -16,10 +16,11 @@ function AppInner() {
   const currentTime = useLayerStore((s) => s.currentTime)
   const setCurrentTime = useLayerStore((s) => s.setCurrentTime)
 
-  const { data: times = [] } = useQuery({
+  const { data: times = [], isError, isLoading } = useQuery({
     queryKey: ['times'],
     queryFn: fetchTimes,
     refetchInterval: 60_000,
+    retry: 3,
   })
 
   useEffect(() => {
@@ -32,6 +33,13 @@ function AppInner() {
     <div className="app">
       <LayerPanel />
       <main className="globe-wrap">
+        {(isError || (!isLoading && times.length === 0)) && (
+          <div className="api-banner">
+            {isError
+              ? '无法连接后端 API — 请先运行 start-backend.bat 或 start.bat'
+              : '无预处理数据 — 请运行 POST http://localhost:8000/ingest/demo'}
+          </div>
+        )}
         <EarthGlobe />
         <Timeline
           times={times}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import type { Viewer } from 'cesium'
+import type { ImageryLayer, Viewer } from 'cesium'
 import { Color } from 'cesium'
-import { createViewer } from '../cesium/createViewer'
+import { createViewer, setBasemapVisible } from '../cesium/createViewer'
 import { useLayerStore } from '../stores/layerStore'
 import {
   applyTemperatureLayer,
@@ -16,20 +16,28 @@ const oceanLayer = new GpuUvParticleLayer(Color.DEEPSKYBLUE.withAlpha(0.9))
 export function EarthGlobe() {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Viewer | null>(null)
+  const basemapLayerRef = useRef<ImageryLayer | null>(null)
   const layers = useLayerStore((s) => s.layers)
   const currentTime = useLayerStore((s) => s.currentTime)
   const setTempRange = useLayerStore((s) => s.setTempRange)
 
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return
-    viewerRef.current = createViewer(containerRef.current)
+    const { viewer, basemapLayer } = createViewer(containerRef.current)
+    viewerRef.current = viewer
+    basemapLayerRef.current = basemapLayer
     return () => {
       windLayer.destroy(viewerRef.current!)
       oceanLayer.destroy(viewerRef.current!)
       viewerRef.current?.destroy()
       viewerRef.current = null
+      basemapLayerRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    setBasemapVisible(basemapLayerRef.current, layers.basemap)
+  }, [layers.basemap])
 
   useEffect(() => {
     const viewer = viewerRef.current

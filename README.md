@@ -36,7 +36,7 @@ cp .env.example .env
 
 | 变量 | 必需 | 说明 |
 |------|------|------|
-| `VITE_CESIUM_ION_TOKEN` | 否 | 有则使用 Cesium Ion 底图；无则回退 OpenStreetMap |
+| `VITE_CESIUM_ION_TOKEN` | 否 | 有效 Token 时使用 Cesium Ion 底图；未设置或为占位符时回退 **Esri World Imagery**（无需 Token） |
 | `VITE_API_BASE_URL` | 否 | 默认 `http://localhost:8000` |
 | `CMEMS_USERNAME` / `CMEMS_PASSWORD` | 否 | 有则拉取 Copernicus 洋流；无则合成洋流 UV |
 | `ENABLE_SCHEDULER` | 否 | 默认 `false`；设为 `true` 时每 6h 后台 GFS 摄取 |
@@ -135,3 +135,47 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 ## 向总指挥提交需求
 
 复制 [docs/REQUEST_TEMPLATE.md](docs/REQUEST_TEMPLATE.md) 填写，在 Cursor 中指定 **总指挥** 角色处理。
+
+## 故障排查
+
+### 球体全黑、无底图
+
+1. **不要**在 `.env` 中保留占位符 `your_cesium_ion_token_here` — 会被当作无效 Ion Token。删除该行或填入真实 Token。
+2. 无 Token 时默认使用 **Esri World Imagery**（需能访问 `server.arcgisonline.com`）。
+3. 确认浏览器控制台无 Cesium CSS 404；`apps/web/src/index.css` 应包含 `@import 'cesium/Build/Cesium/Widgets/widgets.css'`。
+4. 若仍无底图，打开 DevTools → Network，检查 `{z}/{y}/{x}` 瓦片是否 200。
+
+### 气温/等压线/粒子图层不显示
+
+1. **必须先启动后端**：`start-backend.bat` 或 `start.bat`。前端依赖 `http://localhost:8000`。
+2. 确认 `GET http://localhost:8000/times` 返回 ≥1 个时次；若无数据：`curl -X POST http://localhost:8000/ingest/demo`。
+3. 确认静态资产可访问，例如 `GET /static/processed/{valid_time}/temperature.png` 返回 200。
+4. 打开 DevTools Console，搜索 `Layer sync failed` 或 `Assets not found`。
+5. 风/洋流粒子需要 WebGL **浮点纹理**（`OES_texture_float`）；不支持时控制台会警告，粒子可能不可见。
+
+### 演示数据 vs 真实 GFS/CMEMS
+
+| 场景 | `manifest.json` 中 `source` | 如何获得 |
+|------|------------------------------|----------|
+| 本地演示（默认） | `demo` | 后端首次启动或 `POST /ingest/demo` |
+| 真实 GFS | `gfs` | 网络 + ecCodes/cfgrib + `POST /ingest/gfs` |
+| GFS 失败回退 | `demo`（重新生成） | 摄取失败时自动调用演示管线 |
+| 合成洋流 | `synthetic` | 无 CMEMS 凭据时 `POST /ingest/cmems` |
+| 真实 CMEMS | `cmems` | `.env` 配置凭据后摄取 |
+
+页面底部 **Attribution** 会显示当前 `valid_time` 的数据来源。真实 GFS 验证步骤：
+
+```bash
+# 1. 确保 Herbie + cfgrib 可用
+curl -X POST http://localhost:8000/ingest/gfs
+# 2. 查看时次元数据
+curl http://localhost:8000/times/2026-05-23T00:00:00Z/manifest
+# 期望 "source": "gfs"
+```
+
+### 构建验证
+
+```bash
+cd apps/web && npm run build
+cd services/api && python -m app.ingest.demo
+```

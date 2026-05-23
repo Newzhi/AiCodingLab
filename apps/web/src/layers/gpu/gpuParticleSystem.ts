@@ -60,7 +60,13 @@ export class GpuParticleSystem {
 
   init(viewer: Viewer, meta: UvMeta, uGrid: Float32Array, vGrid: Float32Array): void {
     this.destroy(viewer)
-    const context = (viewer.scene as unknown as { context: unknown }).context
+    const scene = viewer.scene as unknown as { context: { floatingPointTexture?: boolean } }
+    const context = scene.context
+    if (!context.floatingPointTexture) {
+      console.warn(
+        'GPU particle layer requires WebGL float textures (OES_texture_float). Particles may not render.',
+      )
+    }
     const [west, south, east, north] = meta.bounds
     const { width, height } = meta
     const textureSize = this.options.particlesTextureSize

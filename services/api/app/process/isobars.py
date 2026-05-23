@@ -7,6 +7,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def _split_segment_at_antimeridian(coords: list[list[float]]) -> list[list[list[float]]]:
+    """Split a LineString into segments when longitude jumps across the antimeridian."""
+    if len(coords) < 2:
+        return [coords] if len(coords) >= 2 else []
+
+    segments: list[list[list[float]]] = []
+    current: list[list[float]] = [coords[0]]
+
+    for i in range(1, len(coords)):
+        lon0, lat0 = current[-1]
+        lon1, lat1 = coords[i]
+        if abs(lon1 - lon0) > 180:
+            if segments or current:
+                if len(current) >= 2:
+                    segments.append(current)
+            current = [[lon1, lat1]]
+        else:
+            current.append([lon1, lat1])
+
+    if len(current) >= 2:
+        segments.append(current)
+    return segments
+
+
 def contours_to_geojson(
     lons: np.ndarray,
     lats: np.ndarray,
@@ -29,13 +53,14 @@ def contours_to_geojson(
             if len(seg) < 2:
                 continue
             coords = [[float(x), float(y)] for x, y in seg]
-            features.append(
-                {
-                    "type": "Feature",
-                    "properties": {"pressure_hPa": float(level)},
-                    "geometry": {"type": "LineString", "coordinates": coords},
-                }
-            )
+            for part in _split_segment_at_antimeridian(coords):
+                features.append(
+                    {
+                        "type": "Feature",
+                        "properties": {"pressure_hPa": float(level)},
+                        "geometry": {"type": "LineString", "coordinates": part},
+                    }
+                )
 
     return {"type": "FeatureCollection", "features": features}
 

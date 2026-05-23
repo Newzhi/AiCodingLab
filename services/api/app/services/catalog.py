@@ -53,6 +53,13 @@ def list_valid_times() -> list[str]:
     return sorted(times)
 
 
+def get_time_manifest(valid_time: str) -> dict | None:
+    path = _time_dir(valid_time) / "manifest.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def get_layer_assets(valid_time: str, layer_id: str) -> dict:
     if layer_id not in LAYER_FILES:
         raise FileNotFoundError(f"Unknown layer: {layer_id}")

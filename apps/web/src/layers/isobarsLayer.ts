@@ -13,6 +13,7 @@ export async function applyIsobarsLayer(
   dataSource = await GeoJsonDataSource.load(url, {
     stroke: Color.WHITE.withAlpha(0.9),
     strokeWidth: 1.5,
+    clampToGround: true,
   })
   await viewer.dataSources.add(dataSource)
 }

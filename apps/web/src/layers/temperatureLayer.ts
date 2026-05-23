@@ -24,7 +24,11 @@ export async function applyTemperatureLayer(
   const provider = await SingleTileImageryProvider.fromUrl(textureUrl, {
     rectangle: Rectangle.fromDegrees(west, south, east, north),
   })
-  imageryLayer = viewer.imageryLayers.addImageryProvider(provider)
+  // Keep basemap at index 0; weather overlay above it.
+  imageryLayer = viewer.imageryLayers.addImageryProvider(
+    provider,
+    Math.min(viewer.imageryLayers.length, 1),
+  )
   imageryLayer.alpha = 0.75
   return { min: meta.min_c, max: meta.max_c }
 }
