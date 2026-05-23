@@ -36,7 +36,7 @@ export async function fetchTimes(): Promise<string[]> {
 
 export async function fetchManifest(validTime: string): Promise<TimeManifest> {
   const encoded = encodeURIComponent(validTime)
-  const res = await fetch(`${API_BASE}/times/${encoded}/manifest`)
+  const res = await fetch(`${API_BASE}/times/manifest?valid_time=${encoded}`)
   if (!res.ok) throw new Error(`Manifest not found for ${validTime}`)
   return res.json()
 }

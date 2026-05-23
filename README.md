@@ -169,7 +169,7 @@ docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
 # 1. 确保 Herbie + cfgrib 可用
 curl -X POST http://localhost:8000/ingest/gfs
 # 2. 查看时次元数据
-curl http://localhost:8000/times/2026-05-23T00:00:00Z/manifest
+curl "http://localhost:8000/times/manifest?valid_time=2026-05-23T00:00:00Z"
 # 期望 "source": "gfs"
 ```
 
