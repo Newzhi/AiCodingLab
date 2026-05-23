@@ -11,6 +11,23 @@ Monorepo：Cesium 3D 地球 + FastAPI 预处理 GFS / Copernicus 海洋数据。
 
 ## 快速开始
 
+### Windows 一键启动
+
+在项目根目录 **双击 `start.bat`**（或命令行执行 `start.bat`），脚本会自动：
+
+1. 在新窗口启动后端（`services/api`：创建/激活 `.venv`、按需 `pip install`、生成演示数据、运行 `python run.py`）
+2. 等待 `http://localhost:8000/health` 就绪后，在新窗口启动前端（`apps/web`：按需 `npm install`、`npm run dev`）
+3. 打开浏览器访问 http://localhost:5173
+
+| 脚本 | 用途 |
+|------|------|
+| `start.bat` | 一键启动后端 + 前端 |
+| `start-backend.bat` | 仅启动后端 API |
+| `start-frontend.bat` | 仅启动前端开发服务器 |
+| `stop.bat` | 终止占用 8000 / 5173 端口的进程 |
+
+**说明：** 首次运行会安装 Python / Node 依赖，耗时较长；之后若 `.venv` 与 `node_modules` 已存在则跳过安装。可选复制 `.env.example` 为 `.env` 以配置 Cesium Ion Token 等（见下文）。
+
 ### 1. 环境
 
 ```bash
