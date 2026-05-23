@@ -123,9 +123,11 @@ docs/               # TEAM, ARCHITECTURE, design/
 
 ### 球体全黑、无底图
 
-1. 确认可访问 `tile.openstreetmap.org`（Network 中瓦片 200）。
-2. 确认 `apps/web/src/index.css` 包含 Cesium widgets CSS。
-3. 控制台无 Cesium 初始化错误。
+1. 确认 `apps/web/src/index.css` 包含 Cesium widgets CSS，且 `.cesium-container` 有 `height: 100%`。
+2. 打开 DevTools → Network，应能看到 `tile.openstreetmap.org` 或 `server.arcgisonline.com` 瓦片请求（200）。
+3. 若 OSM 不可达，应用会自动降级为 Esri World Imagery 卫星底图；控制台可能出现 `OSM basemap tile error` 警告。
+4. React StrictMode 开发模式下会双挂载 Viewer；若球体空白，硬刷新（Ctrl+F5）或查看控制台是否有 `Failed to create Cesium Viewer`。
+5. 控制台无 Cesium Worker / WebGL 初始化错误。
 
 ### 高程地形不生效
 

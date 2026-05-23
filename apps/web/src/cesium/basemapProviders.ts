@@ -1,5 +1,16 @@
 import { Credit, UrlTemplateImageryProvider } from 'cesium'
 
+/** Esri World Imagery — free global fallback when OSM is unreachable. */
+export function createEsriFallbackBasemapProvider(): UrlTemplateImageryProvider {
+  return new UrlTemplateImageryProvider({
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    credit: new Credit(
+      'Tiles © Esri — Esri, Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN, IGP',
+    ),
+    maximumLevel: 19,
+  })
+}
+
 /** OpenStreetMap raster tiles — primary basemap. See https://operations.osmfoundation.org/policies/tiles/ */
 export function createOsmBasemapProvider(): UrlTemplateImageryProvider {
   return new UrlTemplateImageryProvider({

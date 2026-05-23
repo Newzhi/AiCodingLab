@@ -16,16 +16,32 @@ export function EarthGlobe() {
   useCrosshairProbe(viewer)
 
   useEffect(() => {
-    if (!containerRef.current) return
-    const created = createViewer(containerRef.current)
+    const container = containerRef.current
+    if (!container) return
+
+    // StrictMode remount: clear stale Cesium DOM before creating a new Viewer.
+    container.replaceChildren()
+
+    let created: ReturnType<typeof createViewer>
+    try {
+      created = createViewer(container)
+    } catch (err) {
+      console.error('Failed to create Cesium Viewer', err)
+      return
+    }
+
     setViewerState(created.viewer)
     setBasemapLayer(created.basemapLayer)
     setViewer(created.viewer)
+
     return () => {
-      created.viewer.destroy()
+      if (!created.viewer.isDestroyed()) {
+        created.viewer.destroy()
+      }
       setViewerState(null)
       setBasemapLayer(null)
       setViewer(null)
+      container.replaceChildren()
     }
   }, [setViewer])
 
