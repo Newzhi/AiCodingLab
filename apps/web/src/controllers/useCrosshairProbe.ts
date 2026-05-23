@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import {
   Cartesian2,
   Cartographic,
@@ -7,38 +7,11 @@ import {
   ScreenSpaceEventType,
   type Viewer,
 } from 'cesium'
-import { invalidateGridCache, loadTemperatureGrid, probeTemperature } from '../services/gridSampler'
 import { useCrosshairStore } from '../stores/crosshairStore'
-import { useLayerStore } from '../stores/layerStore'
-
-const PROBE_DEBOUNCE_MS = 300
 
 export function useCrosshairProbe(viewer: Viewer | null) {
-  const currentTime = useLayerStore((s) => s.currentTime)
   const setProbe = useCrosshairStore((s) => s.setProbe)
   const reset = useCrosshairStore((s) => s.reset)
-  const liveWebWeather = useCrosshairStore((s) => s.liveWebWeather)
-  const multiSourceMode = useCrosshairStore((s) => s.multiSourceMode)
-  const regionalView = useLayerStore((s) => s.layers.regional_view)
-  const gridRef = useRef<Awaited<ReturnType<typeof loadTemperatureGrid>>>(null)
-  const probeTimer = useRef<number | null>(null)
-  const probeGen = useRef(0)
-
-  useEffect(() => {
-    if (!currentTime) {
-      gridRef.current = null
-      invalidateGridCache()
-      return
-    }
-    invalidateGridCache()
-    let cancelled = false
-    void loadTemperatureGrid(currentTime).then((grid) => {
-      if (!cancelled) gridRef.current = grid
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [currentTime])
 
   useEffect(() => {
     if (!viewer || viewer.isDestroyed()) return
@@ -66,7 +39,6 @@ export function useCrosshairProbe(viewer: Viewer | null) {
       return {
         lat: (carto.latitude * 180) / Math.PI,
         lon: (carto.longitude * 180) / Math.PI,
-        heightM: carto.height,
       }
     }
 
@@ -85,56 +57,15 @@ export function useCrosshairProbe(viewer: Viewer | null) {
         lat: ll.lat,
         lon: ll.lon,
       })
-
-      if (regionalView) return
-
-      if (probeTimer.current !== null) window.clearTimeout(probeTimer.current)
-      const gen = ++probeGen.current
-      probeTimer.current = window.setTimeout(() => {
-        void probeTemperature(ll.lat, ll.lon, currentTime, gridRef.current, {
-          preferWeb: liveWebWeather,
-          multiSource: multiSourceMode,
-        }).then((result) => {
-          if (gen !== probeGen.current) return
-          if (multiSourceMode && result.sources) {
-            setProbe({
-              tempC: result.consensusTempC ?? result.tempC,
-              consensusTempC: result.consensusTempC ?? result.tempC,
-              confidence: result.confidence ?? 'low',
-              sources: result.sources,
-              primaryUsed: result.primaryUsed ?? result.source,
-              source: result.primaryUsed ?? result.source,
-            })
-          } else {
-            setProbe({
-              tempC: result.tempC,
-              source: result.source,
-              consensusTempC: result.tempC,
-              confidence: 'medium',
-              sources: [],
-              primaryUsed: result.source,
-            })
-          }
-        })
-      }, PROBE_DEBOUNCE_MS)
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
     const onLeave = () => reset()
     canvas.addEventListener('mouseleave', onLeave)
 
     return () => {
-      if (probeTimer.current !== null) window.clearTimeout(probeTimer.current)
       canvas.removeEventListener('mouseleave', onLeave)
       handler.destroy()
       reset()
     }
-  }, [
-    viewer,
-    currentTime,
-    liveWebWeather,
-    multiSourceMode,
-    regionalView,
-    setProbe,
-    reset,
-  ])
+  }, [viewer, setProbe, reset])
 }

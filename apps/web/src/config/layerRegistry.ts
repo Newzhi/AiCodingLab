@@ -1,11 +1,6 @@
 import type { LayerId } from '../stores/layerStore'
 
-export type LayerType =
-  | 'basemap'
-  | 'scalar_texture'
-  | 'geojson'
-  | 'uv_particles'
-  | 'regional_view'
+export type LayerType = 'basemap' | 'terrain' | 'imagery_overlay'
 
 export type LayerRegistryEntry = {
   id: LayerId
@@ -15,48 +10,35 @@ export type LayerRegistryEntry = {
   description?: string
 }
 
-/** Data-driven layer catalog — extend here for future layers. */
+/** Map-only layer catalog — OSM basemap, terrain, hillshade, roads. */
 export const LAYER_REGISTRY: LayerRegistryEntry[] = [
   {
     id: 'basemap',
-    label: '底图',
+    label: '底图 (OSM)',
     type: 'basemap',
     defaultVisible: true,
+    description: 'OpenStreetMap 栅格瓦片',
   },
   {
-    id: 'temperature',
-    label: '气温 (2m)',
-    type: 'scalar_texture',
-    defaultVisible: true,
-    description: 'GFS 2m 气温填色（coolwarm -40~40°C）',
-  },
-  {
-    id: 'terrain_contours',
-    label: '地势等高线',
-    type: 'geojson',
-    defaultVisible: true,
-    description: '全球地势海拔等高线（非气压）',
-  },
-  {
-    id: 'wind',
-    label: '风场粒子',
-    type: 'uv_particles',
-    defaultVisible: true,
-    description: 'GPU 风场粒子',
-  },
-  {
-    id: 'ocean',
-    label: '洋流粒子',
-    type: 'uv_particles',
-    defaultVisible: true,
-    description: 'GPU 洋流粒子',
-  },
-  {
-    id: 'regional_view',
-    label: '区域视图',
-    type: 'regional_view',
+    id: 'terrain',
+    label: '高程地形',
+    type: 'terrain',
     defaultVisible: false,
-    description: '国家/省界高亮，HUD 显示区域平均气温（网格聚合）',
+    description: 'Cesium World Terrain（需 Ion Token）',
+  },
+  {
+    id: 'hillshade',
+    label: '高程着色',
+    type: 'imagery_overlay',
+    defaultVisible: false,
+    description: 'Esri World Hillshade 山体阴影叠加',
+  },
+  {
+    id: 'roads',
+    label: '路网',
+    type: 'imagery_overlay',
+    defaultVisible: false,
+    description: 'OSM HOT 路网强调半透明叠加',
   },
 ]
 

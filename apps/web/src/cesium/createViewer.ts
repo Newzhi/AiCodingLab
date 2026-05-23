@@ -2,11 +2,10 @@ import {
   Viewer,
   Ion,
   EllipsoidTerrainProvider,
-  UrlTemplateImageryProvider,
-  Credit,
   SceneMode,
   type ImageryLayer,
 } from 'cesium'
+import { createOsmBasemapProvider } from './basemapProviders'
 
 const ION_PLACEHOLDER = 'your_cesium_ion_token_here'
 
@@ -20,17 +19,6 @@ export function isValidIonToken(token?: string): boolean {
   if (!token) return false
   const trimmed = token.trim()
   return trimmed.length > 0 && trimmed !== ION_PLACEHOLDER
-}
-
-/** Free global imagery — no Cesium Ion token required. */
-export function createFallbackBasemapProvider(): UrlTemplateImageryProvider {
-  return new UrlTemplateImageryProvider({
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    credit: new Credit(
-      'Tiles © Esri — Esri, Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN, IGP',
-    ),
-    maximumLevel: 19,
-  })
 }
 
 export function createViewer(container: HTMLElement): EarthViewer {
@@ -50,6 +38,7 @@ export function createViewer(container: HTMLElement): EarthViewer {
     navigationHelpButton: false,
     fullscreenButton: true,
     terrainProvider: new EllipsoidTerrainProvider(),
+    baseLayer: false,
   })
 
   viewer.scene.mode = SceneMode.SCENE3D
@@ -60,23 +49,10 @@ export function createViewer(container: HTMLElement): EarthViewer {
     }
   })
 
-  if (!useIon) {
-    viewer.imageryLayers.removeAll()
-    const basemapLayer = viewer.imageryLayers.addImageryProvider(
-      createFallbackBasemapProvider(),
-    )
-    return { viewer, basemapLayer }
-  }
+  viewer.imageryLayers.removeAll()
+  const basemapLayer = viewer.imageryLayers.addImageryProvider(createOsmBasemapProvider())
 
-  const basemapLayer = viewer.imageryLayers.get(0)
-  basemapLayer.imageryProvider.errorEvent.addEventListener(() => {
-    if (viewer.isDestroyed()) return
-    console.warn('Cesium Ion basemap failed; falling back to Esri World Imagery.')
-    viewer.imageryLayers.removeAll()
-    viewer.imageryLayers.addImageryProvider(createFallbackBasemapProvider())
-  })
-
-  return { viewer, basemapLayer: viewer.imageryLayers.get(0) }
+  return { viewer, basemapLayer }
 }
 
 export function setBasemapVisible(basemapLayer: ImageryLayer | null, visible: boolean): void {

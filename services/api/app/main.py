@@ -12,25 +12,18 @@ from app.interfaces.routers import assets, boundaries, health, ingest, layers, q
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    from app.application.demo_ingest import DemoIngestService
-    from app.application.layer_catalog import list_valid_times
     from app.infrastructure.boundaries import ensure_boundary_files
 
     ensure_boundary_files()
-    service = DemoIngestService()
-    if not list_valid_times():
-        service.generate_demo_times()
-    else:
-        service.repair_existing_times()
     start_scheduler()
     yield
     stop_scheduler()
 
 
 app = FastAPI(
-    title="Earth Weather API",
-    version="0.1.0",
-    description="GFS/CMEMS preprocessing and layer assets for Cesium",
+    title="Earth Map API",
+    version="0.2.0",
+    description="Map layer catalog and optional weather ingest (legacy) for Cesium globe",
     lifespan=lifespan,
 )
 
@@ -63,7 +56,7 @@ app.include_router(boundaries.router)
 @app.get("/")
 def root():
     return {
-        "service": "earth-weather-api",
+        "service": "earth-map-api",
         "docs": "/docs",
         "health": "/health",
     }

@@ -1,6 +1,6 @@
-# 3D 地球气象可视化
+# 3D 地球地图可视化
 
-Monorepo：Cesium 3D 地球 + FastAPI 预处理 GFS / Copernicus 海洋数据。
+Monorepo：Cesium 3D 地球（OSM 底图、地形、路网）+ FastAPI 图层目录与可选遗留气象摄取管线。
 
 ## 仓库
 
@@ -14,11 +14,7 @@ Monorepo：Cesium 3D 地球 + FastAPI 预处理 GFS / Copernicus 海洋数据。
 
 ### Windows 一键启动
 
-在项目根目录 **双击 `start.bat`**（或命令行执行 `start.bat`），脚本会自动：
-
-1. 在新窗口启动后端（`services/api`：创建/激活 `.venv`、按需 `pip install`、生成演示数据、运行 `python run.py`）
-2. 等待 `http://localhost:8000/health` 就绪后，在新窗口启动前端（`apps/web`：按需 `npm install`、`npm run dev`）
-3. 打开浏览器访问 http://localhost:5173
+在项目根目录 **双击 `start.bat`**（或命令行执行 `start.bat`），脚本会启动后端 API 与前端开发服务器，并打开 http://localhost:5173
 
 | 脚本 | 用途 |
 |------|------|
@@ -27,7 +23,7 @@ Monorepo：Cesium 3D 地球 + FastAPI 预处理 GFS / Copernicus 海洋数据。
 | `start-frontend.bat` | 仅启动前端开发服务器 |
 | `stop.bat` | 终止占用 8000 / 5173 端口的进程 |
 
-**说明：** 首次运行会安装 Python / Node 依赖，耗时较长；之后若 `.venv` 与 `node_modules` 已存在则跳过安装。可选复制 `.env.example` 为 `.env` 以配置 Cesium Ion Token 等（见下文）。
+可选复制 `.env.example` 为 `.env` 以配置 Cesium Ion Token（见下文）。
 
 ### 1. 环境
 
@@ -37,52 +33,22 @@ cp .env.example .env
 
 | 变量 | 必需 | 说明 |
 |------|------|------|
-| `VITE_CESIUM_ION_TOKEN` | 否 | 有效 Token 时使用 Cesium Ion 底图；未设置或为占位符时回退 **Esri World Imagery**（无需 Token） |
-| `VITE_API_BASE_URL` | 否 | 默认 `http://localhost:8000` |
-| `CMEMS_USERNAME` / `CMEMS_PASSWORD` | 否 | 有则拉取 Copernicus 洋流；无则合成洋流 UV |
-| `ENABLE_SCHEDULER` | 否 | 默认 `false`；设为 `true` 时每 6h 后台 GFS 摄取 |
-| GFS / Herbie | 否 | 需网络 + ecCodes/cfgrib；失败时自动回退演示数据 |
+| `VITE_CESIUM_ION_TOKEN` | 否 | 有效 Token 时启用 **Cesium World Terrain**（高程地形图层）；未设置时为椭球地形 + 面板提示 |
+| `VITE_API_BASE_URL` | 否 | 默认 `http://localhost:8000`（图层目录；地图瓦片由浏览器直连 OSM/Esri） |
 
-### 2. 后端 API
+### 2. 后端 API（可选）
+
+地图前端可独立运行；后端提供 `GET /layers/catalog` 与健康检查。遗留气象摄取端点仍保留于代码库，但**默认启动不再生成演示气象数据**。
 
 ```bash
 cd services/api
 python -m venv .venv
 # Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python run.py
 ```
 
-API 默认 http://localhost:8000  
-首次启动若无 `data/processed/` 数据，会自动生成两个预报时次的演示资产。
-
-**离线演示数据（无需网络）：**
-
-```bash
-cd services/api
-python -m app.ingest.demo
-```
-
-或通过 HTTP：
-
-```bash
-curl -X POST http://localhost:8000/ingest/demo
-```
-
-**真实 GFS（需网络与 ecCodes/cfgrib）：**
-
-```bash
-curl -X POST http://localhost:8000/ingest/gfs
-```
-
-**CMEMS 洋流（需 `.env` 凭据）：**
-
-```bash
-curl -X POST "http://localhost:8000/ingest/cmems"
-```
-
-无凭据时 `/ingest/cmems` 会写入合成洋流 UV 并返回 `status: synthetic`。
+API 默认 http://localhost:8000
 
 ### 3. 前端
 
@@ -101,182 +67,74 @@ npm run build
 npm run preview
 ```
 
-### 4. API 验收
+## 图层说明（左侧面板）
+
+| 图层 | 说明 |
+|------|------|
+| **底图 (OSM)** | [OpenStreetMap](https://www.openstreetmap.org/) 栅格瓦片，遵守 [瓦片使用政策](https://operations.osmfoundation.org/policies/tiles/) |
+| **高程地形** | 需有效 `VITE_CESIUM_ION_TOKEN` → Cesium World Terrain；否则椭球并显示 ⚠ |
+| **高程着色** | Esri World Hillshade 半透明叠加（无需 Ion） |
+| **路网** | OSM France HOT 半透明叠加，强调道路网络 |
+| **定位** | 侧栏 FlyTo：输入经纬度飞行至目标 |
+
+鼠标移动显示十字准星与 **经纬度 HUD**（无气温探针）。
+
+视图锁定为 **3D 球体**（`SCENE3D`）。
+
+## 底图与地形配置
+
+| 场景 | 行为 |
+|------|------|
+| 无 Ion Token | OSM 底图 + 椭球；可开 hillshade / 路网 |
+| 有效 Ion Token | OSM 底图 + 可切换 Cesium World Terrain |
+| 署名 | 页脚 © OpenStreetMap contributors；hillshade © Esri |
+
+## API（地图 MVP）
 
 | 端点 | 说明 |
 |------|------|
 | `GET /health` | 健康检查 |
-| `GET /layers/catalog` | 四图层元数据 |
-| `GET /times` | 可用 `valid_time` 列表（≥2） |
-| `GET /assets/{valid_time}/{layer_id}` | 图层资产 URL |
-| `GET /static/processed/...` | PNG / GeoJSON / UV 二进制 |
-| `GET /query/temperature?lat=&lon=&valid_time=` | 点气温（网格 → Open-Meteo，兼容旧路径） |
-| `GET /weather/point?lat=&lon=&valid_time=` | 点气温（grid → Open-Meteo；`prefer_web=true` 走网页链） |
-| `GET /weather/point/multi?lat=&lon=&valid_time=` | **多源并行** + 共识气温与置信度 |
-| `GET /weather/region?lat=&lon=&valid_time=` | **区域平均气温**（网格单元在行政多边形内均值） |
-| `GET /boundaries/countries` | 国家边界 GeoJSON（优先 Natural Earth；离线为简化 bbox） |
-| `GET /boundaries/china_provinces` | 中国省级简化边界 |
+| `GET /layers/catalog` | 地图图层元数据（basemap / terrain / hillshade / roads） |
 
-## 区域视图（区域气温）
-
-图层开关 **「区域视图」**（默认关）：
-
-- 加载 `data/boundaries/` 下国家 + 中国省级 GeoJSON（鼠标悬停高亮边界）
-- HUD 显示 **区域平均气温 °C**（与当前 `valid_time` 的 GFS/demo 网格一致，摄取时写入 `region_temperatures.json`）
-- 与多源十字准星共存：开启区域视图时 HUD 优先区域聚合气温；关闭后恢复点探针/多源模式
-
-**边界数据许可：**
-
-- 推荐：[Natural Earth](https://www.naturalearthdata.com/) 110m Admin 0（公有领域）
-- 仓库内 fallback 由 `services/api/scripts/seed_boundaries.py` 生成的简化 bbox，仅用于离线开发，见 `data/boundaries/LICENSE.md`
-
-生成/更新 Natural Earth 文件（需网络）：
-
-```bash
-curl -L -o data/boundaries/countries.geojson \
-  https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson
-```
-
-## 数据准确性策略（多源校验）
-
-十字准星 HUD 强调**可核对、可回退**的点查询，而非单一数据源：
-
-| 机制 | 说明 |
-|------|------|
-| **并行采集** | `grid`（与图层一致的 GFS/demo 双线性）、`open-meteo`、`web-scrape`（wttr.in）；配置 `OPENWEATHER_API_KEY` 时增加 `openweather` |
-| **共识气温** | 对所有 `status=ok` 读数取**中位数** `consensus_temp_c` |
-| **置信度** | 有效读数离散度 ≤1.5°C → `high`；≤3°C → `medium`；>3°C → `low` |
-| **主源** | `primary_used` 优先 `grid`，其次 `open-meteo`、`openweather`、`web-scrape` |
-| **缓存** | `data/cache/point_weather/multi/`，经纬度四舍五入至 2 位小数，TTL 默认 900s（`POINT_MULTI_CACHE_TTL_SEC`） |
-| **限速** | 各 Provider 内置最小请求间隔（Open-Meteo 1s、wttr.in 3s 等） |
-| **前端** | 图层面板 **「多源校验模式」**（默认开）：HUD 显示共识气温、置信度颜色、各源 ✓/✗ 列表 |
-
-**可选 API Key（`.env`）：**
-
-| 变量 | 用途 |
-|------|------|
-| `OPENWEATHER_API_KEY` | [OpenWeatherMap Current Weather](https://openweathermap.org/current) — 未设置时该源为 `skipped` |
-
-示例：
-
-```bash
-curl "http://localhost:8000/weather/point/multi?lat=31.23&lon=121.47&valid_time=2026-05-23T00:00:00Z"
-```
-
-## 第三方数据获取
-
-移动鼠标于球体上时，界面显示全屏十字准星 HUD：`纬度/经度（4 位小数）`、共识或单源气温、多源列表（多源模式）。
-
-| 优先级 | 来源 | 说明 |
-|--------|------|------|
-| 1 | `grid` | 本地 GFS/demo 网格双线性采样（与当前 `valid_time` 一致） |
-| 2 | `open-meteo` | [Open-Meteo Forecast API](https://open-meteo.com/)（无需 API Key） |
-| 3 | `web-scrape` | [wttr.in](https://wttr.in/) JSON 回退（站点改版或限流时可能失效） |
-| 4 | `openweather` | OpenWeatherMap（需 `OPENWEATHER_API_KEY`） |
-
-**如何启用：**
-
-- **多源校验模式**（默认开）：调用 `/weather/point/multi`，HUD 显示共识与各源状态。
-- 关闭多源时：优先网格；网格不可用时请求 Open-Meteo / wttr.in。
-- 勾选 **「实时网页数据」**：单源模式下跳过网格，走 `prefer_web` 网页链（与多源互斥时多源优先）。
-- API 单源：`GET .../weather/point?lat=31.23&lon=121.47&prefer_web=true`
-- API 多源：`GET .../weather/point/multi?lat=31.23&lon=121.47`
-
-**缓存与限速：** 单源缓存 `data/cache/point_weather/`；多源 `.../multi/`（默认 TTL 15 分钟）；十字准星位置每帧更新，气温请求 300ms 防抖。
-
-**法律与风险声明：**
-
-- 第三方网页/API 受其服务条款约束；本项目不保证长期可用性。
-- wttr.in 等网页抓取对 JSON 结构敏感，**上游改版可能导致回退失效**。
-- 生产环境请优先使用 GFS/CMEMS 官方管线；网页点查询仅作 HUD enrichment。
-- 使用本功能即表示您已了解上述风险；商业用途请自行确认数据源许可。
+遗留气象端点（`/times`、`/assets/...`、`/weather/...`、`POST /ingest/*`）仍存在于 `services/api`，供后续扩展，**不在默认 catalog 中**。
 
 ## 目录
 
 ```
-apps/web/           # Vite + React + Cesium（GPU 风/洋流粒子）
-services/api/       # FastAPI + ingest/process
-data/processed/     # 预处理资产（gitignore）
-docs/               # TEAM, ARCHITECTURE, REQUEST_TEMPLATE
-.cursor/rules/      # 各角色 Cursor 规则
+apps/web/           # Vite + React + Cesium
+services/api/       # FastAPI（catalog + 可选 ingest）
+data/processed/     # 遗留气象资产（gitignore）
+docs/               # TEAM, ARCHITECTURE, design/
 ```
 
 ## MVP 功能
 
 | 项 | 状态 |
 |----|------|
-| Cesium 3D 地球可旋转缩放 | ✅ |
-| 四图层独立开关（气温/地势等高线/风/洋流） | ✅ |
-| 仅 3D 球体（无 2D 平面地图） | ✅ |
+| Cesium 3D 地球 | ✅ |
+| OSM 底图 | ✅ |
+| 高程地形 / 着色 / 路网开关 | ✅ |
+| 经纬度十字准星 HUD | ✅ |
 | 经纬度定位飞行 | ✅ |
-| GFS/CMEMS 管线 + 演示/合成回退 | ✅ |
-| 时间轴 ≥2 时次 | ✅ |
-| Attribution + valid_time | ✅ |
-| GPU ComputeCommand 粒子（风/洋流） | ✅ |
-| 鼠标十字准星 + 网格气温采样 | ✅ |
-| 区域视图 + 区域网格聚合气温 | ✅ |
-| 预报时次紧凑时间轴（芯片/滑块） | ✅ |
-| 多源点查询共识 `/weather/point/multi` | ✅ |
-| Open-Meteo 点查询回退（非爬虫） | ✅ |
-| 分层架构（domain/application/infrastructure） | ✅ |
-| 多智能体文档（AGENTS.md 等） | ✅ |
-
-## 向总指挥提交需求
-
-复制 [docs/REQUEST_TEMPLATE.md](docs/REQUEST_TEMPLATE.md) 填写，在 Cursor 中指定 **总指挥** 角色处理。
+| Attribution（OSM / Esri / 地形说明） | ✅ |
+| 仅 3D 球体 | ✅ |
 
 ## 故障排查
 
 ### 球体全黑、无底图
 
-1. **不要**在 `.env` 中保留占位符 `your_cesium_ion_token_here` — 会被当作无效 Ion Token。删除该行或填入真实 Token。
-2. 无 Token 时默认使用 **Esri World Imagery**（需能访问 `server.arcgisonline.com`）。
-3. 确认浏览器控制台无 Cesium CSS 404；`apps/web/src/index.css` 应包含 `@import 'cesium/Build/Cesium/Widgets/widgets.css'`。
-4. 若仍无底图，打开 DevTools → Network，检查 `{z}/{y}/{x}` 瓦片是否 200。
+1. 确认可访问 `tile.openstreetmap.org`（Network 中瓦片 200）。
+2. 确认 `apps/web/src/index.css` 包含 Cesium widgets CSS。
+3. 控制台无 Cesium 初始化错误。
 
-### 气温/地势等高线/粒子图层不显示
+### 高程地形不生效
 
-1. **必须先启动后端**：`start-backend.bat` 或 `start.bat`。前端依赖 `http://localhost:8000`。
-2. 确认 `GET http://localhost:8000/times` 返回 ≥1 个时次；若无数据：`curl -X POST http://localhost:8000/ingest/demo`。
-3. 确认静态资产可访问，例如 `GET /static/processed/{valid_time}/temperature.png` 返回 200。
-4. 打开 DevTools Console，搜索 `Layer sync failed` 或 `Assets not found`。
-5. 风/洋流粒子需要 WebGL **浮点纹理**（`OES_texture_float`）；不支持时控制台会警告，粒子可能不可见。
-
-### 演示数据 vs 真实 GFS/CMEMS
-
-| 场景 | `manifest.json` 中 `source` | 如何获得 |
-|------|------------------------------|----------|
-| 本地演示（默认） | `demo` | 后端首次启动或 `POST /ingest/demo` |
-| 真实 GFS | `gfs` | 网络 + ecCodes/cfgrib + `POST /ingest/gfs` |
-| GFS 失败回退 | `demo`（重新生成） | 摄取失败时自动调用演示管线 |
-| 合成洋流 | `synthetic` | 无 CMEMS 凭据时 `POST /ingest/cmems` |
-| 真实 CMEMS | `cmems` | `.env` 配置凭据后摄取 |
-
-### 图层说明（地势 vs 气压、气温色标）
-
-| 图层 ID | 含义 | 演示数据来源 | 真实数据 |
-|---------|------|--------------|----------|
-| `temperature` | GFS 2m 气温 (°C) | 合成纬度气候场；色标固定 **-40 ~ +40°C**（coolwarm） | Herbie GFS `TMP:2 m`（Kelvin → °C） |
-| `terrain_contours` | **地势等高线**（海拔，非海平面气压） | 合成全球 DEM + 500m 等高线 | 同上（静态，不随预报时次变化） |
-| `wind` / `ocean` | 风场 / 洋流粒子 | 合成 UV | GFS / CMEMS |
-
-**已移除**：`isobars`（海平面气压等压线）。旧目录若仅有 `isobars.geojson`，请重新 `POST /ingest/demo` 生成 `terrain_contours.geojson`。
-
-**气温验证（演示）**：开启气温图层后，赤道附近应偏暖（红/暖色），高纬极地应偏冷（蓝/冷色）；图例显示固定色标 -40°C ~ +40°C。
-
-页面底部 **Attribution** 会显示当前 `valid_time` 的数据来源。真实 GFS 验证步骤：
-
-```bash
-# 1. 确保 Herbie + cfgrib 可用
-curl -X POST http://localhost:8000/ingest/gfs
-# 2. 查看时次元数据
-curl "http://localhost:8000/times/manifest?valid_time=2026-05-23T00:00:00Z"
-# 期望 "source": "gfs"
-```
+1. 在 `.env` 设置有效 `VITE_CESIUM_ION_TOKEN`（勿使用占位符 `your_cesium_ion_token_here`）。
+2. 勾选 **高程地形**；无 Token 时面板会显示 ⚠ 提示。
 
 ### 构建验证
 
 ```bash
-cd apps/web && npm run build
-cd services/api && python -m app.ingest.demo
+cd apps/web
+npm run build
 ```

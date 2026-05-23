@@ -153,7 +153,7 @@ GET /query/temperature?lat=31.23&lon=121.47&valid_time=2026-05-23T12:00:00Z
 - TypeScript：`strict` 开启；组件函数式 + hooks
 - Python：类型注解；依赖倒置（protocols）；xarray 使用 `infrastructure/xarray_context.py`
 - 禁止在业务代码中硬编码密钥
-- 图层 ID 枚举：`temperature` | `terrain_contours` | `wind` | `ocean` | `basemap`
+- 图层 ID 枚举（地图 MVP）：`basemap` | `terrain` | `hillshade` | `roads`（前端 `layerRegistry.ts`）；遗留气象资产 ID 仍见 `domain/entities.py`
 - 业务 colormap：须 **美术设计师** 规格（当前气温 **coolwarm -40~40°C**）
 
 ## 10. 性能目标
