@@ -19,7 +19,11 @@
 
 ### Windows 一键启动
 
-在项目根目录 **双击 `start.bat`**（或命令行执行 `start.bat`），脚本会启动后端 API 与前端开发服务器，并打开 http://localhost:5173
+在项目根目录 **双击 `start.bat`**（或命令行执行 `start.bat`），脚本会启动后端 API 与前端开发服务器，并打开 http://localhost:5173。
+
+> 首次在未安装 Node.js 的 Windows 机器上运行时，`start-frontend.bat` 会自动下载项目内便携 Node（当前固定为 Node 20 LTS）并复用缓存；无需管理员权限。
+> 
+> Node 缓存目录：`tools/node/cache`，解压目录：`tools/node/node-v20.19.0-win-x64`。
 
 | 脚本 | 用途 |
 |------|------|
@@ -138,6 +142,13 @@ docs/               # TEAM, ARCHITECTURE, design/
 
 1. 在 `.env` 设置有效 `VITE_CESIUM_ION_TOKEN`（勿使用占位符 `your_cesium_ion_token_here`）。
 2. 勾选 **高程地形**；无 Token 时面板会显示 ⚠ 提示。
+
+### 前端启动提示 Node 下载失败
+
+1. 手动从 Node 官网下载与脚本版本一致的压缩包：`node-v20.19.0-win-x64.zip`。
+2. 把压缩包放到 `tools/node/cache/` 目录。
+3. 重新执行 `start.bat`（脚本会自动解压并继续启动前端）。
+4. 如公司网络限制下载，可在内网制品库镜像该 zip，并保持文件名一致。
 
 ### 构建验证
 
